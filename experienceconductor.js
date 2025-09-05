@@ -2,9 +2,7 @@
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((time) => {lenis.raf(time * 1000);});
   gsap.ticker.lagSmoothing(0);
-</script>
 
-<script>
   gsap.registerPlugin(ScrollTrigger, SplitText)
 
   function initHighlightText(){
@@ -46,9 +44,7 @@
   document.addEventListener("DOMContentLoaded", () =>{
     initHighlightText();
   });
-</script>
 
-<script>
   gsap.registerPlugin(ScrollTrigger)
 
   function initGlobalParallax() {
@@ -128,9 +124,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     initGlobalParallax()
   })
-</script>
 
-<script>
   // Register once somewhere central in your bundle:
   gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -195,9 +189,7 @@
     // The missing piece:
     initParallaxImages();
   });
-</script>
 
-<script>
   gsap.registerPlugin(ScrollTrigger);
 
   function initStackingCardsParallax(){
@@ -239,9 +231,7 @@
   document.addEventListener("DOMContentLoaded", () =>{
     initStackingCardsParallax();
   })
-</script>
 
-<script>
   gsap.registerPlugin(Draggable);
 
   function initStackedCardsSlider() {
@@ -446,9 +436,6 @@
   document.addEventListener("DOMContentLoaded", () => {
     initStackedCardsSlider();
   });
-</script>
-
-<script>
 
   gsap.registerPlugin(InertiaPlugin);
 
@@ -668,9 +655,7 @@
 
   document.addEventListener('DOMContentLoaded', initGlowingInteractiveDotsGrid);
 
-</script>
 
-<script>
   function initDynamicCurrentYear() {  
     const currentYear = new Date().getFullYear();
     const currentYearElements = document.querySelectorAll('[data-current-year]');
@@ -683,9 +668,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     initDynamicCurrentYear();
   });
-</script>
 
-<script>
   (function() {
     const colors = [
       "var(--color-red)",
@@ -712,9 +695,7 @@
       }
     });
   })();
-</script>
 
-<script>
   function initVimeoLightboxAdvanced() {
     // Single lightbox container
     const lightbox = document.querySelector('[data-vimeo-lightbox-init]');
@@ -1000,9 +981,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     initVimeoLightboxAdvanced();
   });
-</script>
 
-<script>
   (() => {
     const SELECTOR = '[data-button-offset]';
     // Tweak this if your header uses other classes/selectors
@@ -1070,9 +1049,7 @@
       }
     }, { passive: false });
   })();
-</script>
 
-<script>
   gsap.registerPlugin(ScrollTrigger);
 
   function initStickyFeatures(root){
@@ -1188,9 +1165,7 @@
   document.addEventListener("DOMContentLoaded", () =>{
     initStickyFeatures();
   })
-</script>
 
-<script>
   (function () {
     const SVG_MARKUP = `
 <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1306,9 +1281,6 @@
       setFollowerImage();
     };
   })();
-</script>
-
-<script>
 
   function initBasicFilterSetupMultiMatch() {
     const transitionDelay = 300;
