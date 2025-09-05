@@ -843,4 +843,373 @@ function initVimeoLightboxAdvanced() {
 
   openButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      const vid = btn.getAttribute('data-vimeo-li
+      const vid = btn.getAttribute('data-vimeo-lightbox-id');
+      const img = btn.querySelector('[data-vimeo-lightbox-placeholder]');
+      if (vid) openLightbox(vid, img);
+    });
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+/** Offset-aware smooth scroll for buttons using [data-button-offset] */
+function initButtonOffsetSmoothScroll() {
+  const SELECTOR = '[data-button-offset]';
+  const HEADER_SELECTOR = '[data-fixed-header], header.fixed, header.sticky, .fixed-header, .site-header';
+
+  function parseOffset(value, ctx) {
+    const ctxSize  = parseFloat(getComputedStyle(ctx || document.documentElement).fontSize) || 16;
+    const rootSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const def = 4 * ctxSize;
+    if (!value) return def;
+    const v = String(value).trim().toLowerCase();
+    if (v.endsWith('px'))  return parseFloat(v);
+    if (v.endsWith('rem')) return parseFloat(v) * rootSize;
+    if (v.endsWith('em'))  return parseFloat(v) * ctxSize;
+    if (v.endsWith('vh'))  return window.innerHeight * (parseFloat(v) / 100);
+    if (v.endsWith('vw'))  return window.innerWidth  * (parseFloat(v) / 100);
+    const n = parseFloat(v);
+    return isNaN(n) ? def : n;
+  }
+
+  function headerHeight() {
+    const els = Array.from(document.querySelectorAll(HEADER_SELECTOR));
+    let h = 0;
+    for (const el of els) {
+      const cs = getComputedStyle(el);
+      const isTop = ['fixed', 'sticky'].includes(cs.position) && (parseFloat(cs.top) || 0) <= 0;
+      if (!isTop) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none') h += r.height;
+    }
+    return h;
+  }
+
+  function getTarget(el) {
+    const explicit = el.getAttribute('data-target') || el.dataset.target;
+    let id = explicit || ((el.getAttribute('href') || '').split('#')[1] || '');
+    if (!id) return null;
+    try { id = decodeURIComponent(id); } catch {}
+    return document.getElementById(id) || document.querySelector(`[name="${CSS.escape(id)}"]`);
+  }
+
+  const pageTop = el => el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest(SELECTOR);
+    if (!btn) return;
+    const target = getTarget(btn);
+    if (!target) return;
+    e.preventDefault();
+
+    const baseOffset  = parseOffset(btn.getAttribute('data-button-offset'), btn);
+    const totalOffset = headerHeight() + baseOffset;
+
+    if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+      window.lenis.scrollTo(target, { offset: -totalOffset, immediate: false });
+    } else {
+      const y = Math.max(0, pageTop(target) - totalOffset);
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+
+    if (target.id) {
+      history.pushState(null, '', `#${encodeURIComponent(target.id)}`);
+      target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
+    }
+  }, { passive: false });
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Sticky Features
+// ──────────────────────────────────────────────────────────────────────────────
+function initStickyFeatures(root){
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+
+  const wraps = Array.from((root || document).querySelectorAll('[data-sticky-feature-wrap]'));
+  if (!wraps.length) return;
+
+  wraps.forEach(w => {
+    const visualWraps = Array.from(w.querySelectorAll('[data-sticky-feature-visual-wrap]'));
+    const items       = Array.from(w.querySelectorAll('[data-sticky-feature-item]'));
+    const progressBar = w.querySelector('[data-sticky-feature-progress]');
+
+    const count = Math.min(visualWraps.length, items.length);
+    if (count < 1) return;
+
+    const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const DURATION = rm ? 0.01 : 0.75;
+    const EASE     = 'power4.inOut';
+    const SCROLL_AMOUNT = 0.9;
+
+    const getTexts = el => Array.from(el.querySelectorAll('[data-sticky-feature-text]'));
+
+    visualWraps[0] && gsap.set(visualWraps[0], { clipPath: 'inset(0% round 0.75em)' });
+    gsap.set(items[0], { autoAlpha: 1 });
+
+    let currentIndex = 0;
+
+    function transition(fromIndex, toIndex){
+      if (fromIndex === toIndex) return;
+      const tl = gsap.timeline({ defaults: { overwrite: 'auto' } });
+
+      if (fromIndex < toIndex){
+        tl.to(visualWraps[toIndex], { clipPath: 'inset(0% round 0.75em)', duration: DURATION, ease: EASE }, 0);
+      } else {
+        tl.to(visualWraps[fromIndex], { clipPath: 'inset(50% round 0.75em)', duration: DURATION, ease: EASE }, 0);
+      }
+      animateOut(items[fromIndex]);
+      animateIn(items[toIndex]);
+    }
+
+    function animateOut(itemEl){
+      const texts = getTexts(itemEl);
+      gsap.to(texts, {
+        autoAlpha: 0,
+        y: -30,
+        ease: 'power4.out',
+        duration: 0.4,
+        onComplete: () => gsap.set(itemEl, { autoAlpha: 0 })
+      });
+    }
+
+    function animateIn(itemEl){
+      const texts = getTexts(itemEl);
+      gsap.set(itemEl, { autoAlpha: 1 });
+      gsap.fromTo(texts, { autoAlpha: 0, y: 30 }, {
+        autoAlpha: 1,
+        y: 0,
+        ease: 'power4.out',
+        duration: DURATION,
+        stagger: 0.1
+      });
+    }
+
+    const steps = Math.max(1, count - 1);
+
+    ScrollTrigger.create({
+      trigger: w,
+      start: 'center center',
+      end: () => `+=${steps * 100}%`,
+      pin: true,
+      scrub: true,
+      invalidateOnRefresh: true,
+      onUpdate: self => {
+        const p = Math.min(self.progress, SCROLL_AMOUNT) / SCROLL_AMOUNT;
+        let idx = Math.floor(p * steps + 1e-6);
+        idx = Math.max(0, Math.min(steps, idx));
+
+        if (progressBar) {
+          gsap.to(progressBar, { scaleX: p, ease: 'none' });
+        }
+
+        if (idx !== currentIndex) {
+          transition(currentIndex, idx);
+          currentIndex = idx;
+        }
+      }
+    });
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Custom Cursor Follower (kept behavior, delayed until DOM is ready by gate)
+// ──────────────────────────────────────────────────────────────────────────────
+(() => {
+  const SVG_MARKUP = `
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="100" height="100" rx="50" fill="#E62D14"/>
+<path d="M30.704 44.156H32.352L27.984 55.5H26.432L22.16 44.156H23.824L27.248 53.484L30.704 44.156ZM33.7956 55.5V47.804H35.2836V55.5H33.7956ZM33.4596 44.892C33.4596 44.5827 33.561 44.3267 33.7636 44.124C33.977 43.9107 34.233 43.804 34.5316 43.804C34.841 43.804 35.097 43.9107 35.2996 44.124C35.513 44.3267 35.6196 44.5827 35.6196 44.892C35.6196 45.1907 35.513 45.4467 35.2996 45.66C35.097 45.8627 34.841 45.964 34.5316 45.964C34.233 45.964 33.977 45.8627 33.7636 45.66C33.561 45.4467 33.4596 45.1907 33.4596 44.892ZM43.0265 50.86C43.0052 50.3053 42.8185 49.8413 42.4665 49.468C42.1145 49.084 41.5972 48.892 40.9145 48.892C40.5945 48.892 40.3065 48.9507 40.0505 49.068C39.8052 49.1747 39.5918 49.324 39.4105 49.516C39.2398 49.6973 39.1012 49.9053 38.9945 50.14C38.8878 50.3747 38.8292 50.6147 38.8185 50.86H43.0265ZM44.5465 53.308C44.4398 53.6493 44.2798 53.9693 44.0665 54.268C43.8638 54.556 43.6132 54.812 43.3145 55.036C43.0265 55.2493 42.6958 55.42 42.3225 55.548C41.9492 55.676 41.5385 55.74 41.0905 55.74C40.5785 55.74 40.0878 55.6493 39.6185 55.468C39.1492 55.2867 38.7332 55.02 38.3705 54.668C38.0185 54.316 37.7358 53.884 37.5225 53.372C37.3198 52.86 37.2185 52.2787 37.2185 51.628C37.2185 51.02 37.3198 50.4707 37.5225 49.98C37.7252 49.4787 37.9918 49.052 38.3225 48.7C38.6638 48.3373 39.0585 48.06 39.5065 47.868C39.9545 47.6653 40.4185 47.564 40.8985 47.564C41.4852 47.564 42.0078 47.6653 42.4665 47.868C42.9358 48.06 43.3252 48.332 43.6345 48.684C43.9438 49.036 44.1785 49.4627 44.3385 49.964C44.5092 50.4547 44.5945 50.9987 44.5945 51.596C44.5945 51.692 44.5892 51.7827 44.5785 51.868C44.5785 51.9533 44.5732 52.0227 44.5625 52.076H38.7705C38.7812 52.4173 38.8452 52.732 38.9625 53.02C39.0798 53.308 39.2398 53.5587 39.4425 53.772C39.6558 53.9747 39.9012 54.1347 40.1785 54.252C40.4665 54.3587 40.7705 54.412 41.0905 54.412C41.7198 54.412 42.1998 54.2627 42.5305 53.964C42.8612 53.6653 43.1012 53.2973 43.2505 52.86L44.5465 53.308ZM52.3243 47.804L54.3243 53.596L56.0203 47.804H57.6043L55.1083 55.5H53.5563L51.5083 49.644L49.5083 55.5H47.9243L45.3963 47.804H47.0443L48.7723 53.596L50.7723 47.804H52.3243Z" fill="white"/>
+<path d="M70.0833 50L75.9166 50" stroke="white" stroke-width="0.833333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M73 47.0846L75.9167 50.0013L73 52.918" stroke="white" stroke-width="0.833333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`.trim();
+
+  function resolveColor(token) {
+    const probe = document.createElement('span');
+    probe.style.color = token;
+    document.body.appendChild(probe);
+    const resolved = getComputedStyle(probe).color || token;
+    probe.remove();
+    return resolved;
+  }
+  const recolorMainFill = (svgString, color) => svgString.replace(/fill="#e62d14"/i, `fill="${color}"`);
+  const ensureSize = (svgString, w = 96, h = 96) =>
+    svgString.replace(/<svg\b/i, (m) => `${m} width="${w}" height="${h}"`);
+  function svgToDataUrl(svgString) {
+    const compact = svgString.replace(/\s{2,}/g, ' ').trim();
+    const encoded = encodeURIComponent(compact)
+      .replace(/%20/g, ' ')
+      .replace(/%0A/g, '')
+      .replace(/%3D/g, '=')
+      .replace(/%3A/g, ':')
+      .replace(/%2F/g, '/')
+      .replace(/%22/g, "'");
+    return `data:image/svg+xml;utf8,${encoded}`;
+  }
+  function buildCursorUrl() {
+    const token = sessionStorage.getItem('randomColor') || '#ff4d4f';
+    const color = resolveColor(token);
+    return svgToDataUrl(ensureSize(recolorMainFill(SVG_MARKUP, color), 96, 96));
+  }
+
+  const style = document.createElement('style');
+  style.textContent = `
+    [data-cursor="custom"], [data-cursor="custom"] * { cursor: none !important; }
+    .cursor-follow {
+      position: fixed; left: 0; top: 0;
+      width: 96px; height: 96px;
+      pointer-events: none; opacity: 0;
+      transform: translate(-50%, -50%) scale(0.7);
+      will-change: transform, opacity; z-index: 99999;
+      transition: transform 250ms cubic-bezier(.22,.9,.24,1), opacity 180ms ease-out;
+    }`;
+  document.head.appendChild(style);
+
+  const follower = document.createElement('div');
+  follower.className = 'cursor-follow';
+  document.body.appendChild(follower);
+
+  function setFollowerImage() {
+    follower.style.backgroundImage = `url("${buildCursorUrl()}")`;
+    follower.style.backgroundSize = 'contain';
+    follower.style.backgroundRepeat = 'no-repeat';
+    follower.style.backgroundPosition = 'center';
+  }
+  setFollowerImage();
+
+  let mx = 0, my = 0, inside = false;
+  document.addEventListener('mousemove', (e) => {
+    mx = e.clientX; my = e.clientY;
+    follower.style.transform = `translate(${mx}px, ${my}px) scale(${inside ? 1 : 0.7})`;
+  }, { passive: true });
+
+  function updateInsideFlag(target) {
+    const now = !!target.closest?.('[data-cursor="custom"]');
+    if (now !== inside) {
+      inside = now;
+      if (inside) {
+        follower.style.opacity = '1';
+        follower.style.transform = `translate(${mx}px, ${my}px) scale(1)`;
+      } else {
+        follower.style.opacity = '0';
+        follower.style.transform = `translate(${mx}px, ${my}px) scale(0.7)`;
+      }
+    }
+  }
+
+  document.addEventListener('mouseover', (e) => updateInsideFlag(e.target), { passive: true });
+  document.addEventListener('mouseout', (e) => {
+    if (!e.relatedTarget) {
+      inside = false;
+      follower.style.opacity = '0';
+      follower.style.transform = `translate(${mx}px, ${my}px) scale(0.7)`;
+    }
+  }, { passive: true });
+
+  window.refreshCustomCursor = function(newToken) {
+    if (newToken) sessionStorage.setItem('randomColor', newToken);
+    setFollowerImage();
+  };
+})();
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Random session color (kept behavior; runs on first DOM ready via top gate)
+// ──────────────────────────────────────────────────────────────────────────────
+(() => {
+  const colors = [
+    'var(--color-red)',
+    'var(--color-green)',
+    'var(--color-blue)',
+    'var(--color-yellow)',
+    'var(--color-orange)'
+  ];
+  let sessionColor = sessionStorage.getItem('randomColor');
+  if (!sessionColor) {
+    sessionColor = colors[Math.floor(Math.random() * colors.length)];
+    sessionStorage.setItem('randomColor', sessionColor);
+  }
+  document.querySelectorAll('[data-color-random]').forEach((el) => {
+    const type = el.getAttribute('data-color-random');
+    if (type === 'bg')   el.style.backgroundColor = sessionColor;
+    else if (type === 'text') el.style.color = sessionColor;
+  });
+})();
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Basic Filter Setup (Multi Match)
+// ──────────────────────────────────────────────────────────────────────────────
+function initBasicFilterSetupMultiMatch() {
+  const transitionDelay = 300;
+  const groups = [...document.querySelectorAll('[data-filter-group]')];
+  if (!groups.length) return;
+
+  groups.forEach(group => {
+    const buttons = [...group.querySelectorAll('[data-filter-target]')];
+    const items   = [...group.querySelectorAll('[data-filter-name]')];
+
+    items.forEach(item => {
+      const cs = item.querySelectorAll('[data-filter-name-collect]');
+      if (!cs.length) return;
+      const seen = new Set(), out = [];
+      cs.forEach(c => {
+        const v = (c.getAttribute('data-filter-name-collect') || '').trim().toLowerCase();
+        if (v && !seen.has(v)) { seen.add(v); out.push(v); }
+      });
+      if (out.length) item.setAttribute('data-filter-name', out.join(' '));
+    });
+
+    const itemTokens = new Map();
+    items.forEach(el => {
+      const tokens = ((el.getAttribute('data-filter-name') || '').trim().toLowerCase().split(/\s+/)).filter(Boolean);
+      itemTokens.set(el, new Set(tokens));
+    });
+
+    const setItemState = (el, on) => {
+      const next = on ? 'active' : 'not-active';
+      if (el.getAttribute('data-filter-status') !== next) {
+        el.setAttribute('data-filter-status', next);
+        el.setAttribute('aria-hidden', on ? 'false' : 'true');
+      }
+    };
+    const setButtonState = (btn, on) => {
+      const next = on ? 'active' : 'not-active';
+      if (btn.getAttribute('data-filter-status') !== next) {
+        btn.setAttribute('data-filter-status', next);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+    };
+
+    let activeTarget = null;
+    const itemMatches = el => (!activeTarget || activeTarget === 'all') ? true : itemTokens.get(el).has(activeTarget);
+
+    const paint = rawTarget => {
+      const target = (rawTarget || '').trim().toLowerCase();
+      activeTarget = (!target || target === 'all') ? 'all' : target;
+
+      items.forEach(el => {
+        if (el._ft) clearTimeout(el._ft);
+        const next = itemMatches(el);
+        const cur = el.getAttribute('data-filter-status');
+        if (cur === 'active' && transitionDelay > 0) {
+          el.setAttribute('data-filter-status', 'transition-out');
+          el._ft = setTimeout(() => { setItemState(el, next); el._ft = null; }, transitionDelay);
+        } else if (transitionDelay > 0) {
+          el._ft = setTimeout(() => { setItemState(el, next); el._ft = null; }, transitionDelay);
+        } else {
+          setItemState(el, next);
+        }
+      });
+
+      buttons.forEach(btn => {
+        const t = (btn.getAttribute('data-filter-target') || '').trim().toLowerCase();
+        setButtonState(btn, (activeTarget === 'all' && t === 'all') || (t && t === activeTarget));
+      });
+    };
+
+    group.addEventListener('click', e => {
+      const btn = e.target.closest('[data-filter-target]');
+      if (btn && group.contains(btn)) paint(btn.getAttribute('data-filter-target'));
+    });
+  });
+}
+// keep original init for filters
+document.addEventListener('DOMContentLoaded', () => { initBasicFilterSetupMultiMatch(); });
