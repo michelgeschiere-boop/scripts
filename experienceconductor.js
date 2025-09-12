@@ -55,21 +55,21 @@ new SplitText(heading, {
 type: 'words, chars',
 autoSplit: true,
 onSplit(self) {
-  const ctx = gsap.context(() => {
-    gsap.timeline({
-      scrollTrigger: {
-        scrub: true,
-        trigger: heading,
-        start: scrollStart,
-        end: scrollEnd,
-      }
-    }).from(self.chars, {
-      autoAlpha: fadedValue,
-      stagger: staggerValue,
-      ease: 'linear'
-    });
+const ctx = gsap.context(() => {
+  gsap.timeline({
+    scrollTrigger: {
+      scrub: true,
+      trigger: heading,
+      start: scrollStart,
+      end: scrollEnd,
+    }
+  }).from(self.chars, {
+    autoAlpha: fadedValue,
+    stagger: staggerValue,
+    ease: 'linear'
   });
-  return ctx;
+});
+return ctx;
 }
 });
 }
@@ -93,45 +93,45 @@ isDesktop:          '(min-width:992px)'
 const { isMobile, isMobileLandscape, isTablet } = context.conditions;
 
 const ctx = gsap.context(() => {
-  document.querySelectorAll('[data-parallax="trigger"]').forEach((trigger) => {
-    const disable = trigger.getAttribute('data-parallax-disable');
-    if (
-      (disable === 'mobile' && isMobile) ||
-      (disable === 'mobileLandscape' && isMobileLandscape) ||
-      (disable === 'tablet' && isTablet)
-    ) return;
+document.querySelectorAll('[data-parallax="trigger"]').forEach((trigger) => {
+  const disable = trigger.getAttribute('data-parallax-disable');
+  if (
+    (disable === 'mobile' && isMobile) ||
+    (disable === 'mobileLandscape' && isMobileLandscape) ||
+    (disable === 'tablet' && isTablet)
+  ) return;
 
-    const target = trigger.querySelector('[data-parallax="target"]') || trigger;
-    const direction = trigger.getAttribute('data-parallax-direction') || 'vertical';
-    const prop = direction === 'horizontal' ? 'xPercent' : 'yPercent';
+  const target = trigger.querySelector('[data-parallax="target"]') || trigger;
+  const direction = trigger.getAttribute('data-parallax-direction') || 'vertical';
+  const prop = direction === 'horizontal' ? 'xPercent' : 'yPercent';
 
-    const scrubAttr = trigger.getAttribute('data-parallax-scrub');
-    const scrub = scrubAttr ? parseFloat(scrubAttr) : true;
+  const scrubAttr = trigger.getAttribute('data-parallax-scrub');
+  const scrub = scrubAttr ? parseFloat(scrubAttr) : true;
 
-    const startVal = trigger.hasAttribute('data-parallax-start')
-      ? parseFloat(trigger.getAttribute('data-parallax-start')) : 20;
+  const startVal = trigger.hasAttribute('data-parallax-start')
+    ? parseFloat(trigger.getAttribute('data-parallax-start')) : 20;
 
-    const endVal = trigger.hasAttribute('data-parallax-end')
-      ? parseFloat(trigger.getAttribute('data-parallax-end')) : -20;
+  const endVal = trigger.hasAttribute('data-parallax-end')
+    ? parseFloat(trigger.getAttribute('data-parallax-end')) : -20;
 
-    const scrollStartRaw = trigger.getAttribute('data-parallax-scroll-start') || 'top bottom';
-    const scrollEndRaw   = trigger.getAttribute('data-parallax-scroll-end')   || 'bottom top';
+  const scrollStartRaw = trigger.getAttribute('data-parallax-scroll-start') || 'top bottom';
+  const scrollEndRaw   = trigger.getAttribute('data-parallax-scroll-end')   || 'bottom top';
 
-    gsap.fromTo(
-      target,
-      { [prop]: startVal },
-      {
-        [prop]: endVal,
-        ease: 'none',
-        scrollTrigger: {
-          trigger,
-          start: `clamp(${scrollStartRaw})`,
-          end:   `clamp(${scrollEndRaw})`,
-          scrub,
-        },
-      }
-    );
-  });
+  gsap.fromTo(
+    target,
+    { [prop]: startVal },
+    {
+      [prop]: endVal,
+      ease: 'none',
+      scrollTrigger: {
+        trigger,
+        start: `clamp(${scrollStartRaw})`,
+        end:   `clamp(${scrollEndRaw})`,
+        scrub,
+      },
+    }
+  );
+});
 });
 
 return () => ctx.revert();
@@ -154,35 +154,35 @@ if (!imgs.length || !panels.length) return;
 // Stack & init visibility (1 is shown by default)
 imgs.forEach(img => {
 gsap.set(img, {
-  position: 'absolute',
-  top: 0, left: 0, right: 0, bottom: 0,
-  objectFit: 'cover',
-  willChange: 'opacity',
-  autoAlpha: img.dataset.parallaxImage === '1' ? 1 : 0
+position: 'absolute',
+top: 0, left: 0, right: 0, bottom: 0,
+objectFit: 'cover',
+willChange: 'opacity',
+autoAlpha: img.dataset.parallaxImage === '1' ? 1 : 0
 });
 });
 
 const swap = (idx) => {
 const targetIdx = String(idx);
 imgs.forEach(img => {
-  const isMatch = String(img.dataset.parallaxImage) === targetIdx;
-  gsap.to(img, {
-    autoAlpha: isMatch ? 1 : 0,
-    duration: 0.8,
-    ease: 'power2.inOut',
-    overwrite: 'auto'
-  });
+const isMatch = String(img.dataset.parallaxImage) === targetIdx;
+gsap.to(img, {
+  autoAlpha: isMatch ? 1 : 0,
+  duration: 0.8,
+  ease: 'power2.inOut',
+  overwrite: 'auto'
+});
 });
 };
 
 panels.forEach(panel => {
 const idx = panel.dataset.parallaxText;
 ScrollTrigger.create({
-  trigger: panel,
-  start: 'top 75%',
-  end: 'bottom 50%',
-  onEnter: () => swap(idx),
-  onEnterBack: () => swap(idx)
+trigger: panel,
+start: 'top 75%',
+end: 'bottom 50%',
+onEnter: () => swap(idx),
+onEnterBack: () => swap(idx)
 });
 });
 });
@@ -210,11 +210,11 @@ const previousCardImage = previousCard.querySelector('[data-stacking-cards-img]'
 gsap.timeline({
 defaults: { ease: 'none', duration: 1 },
 scrollTrigger: {
-  trigger: card,
-  start: 'top bottom',
-  end: 'top top',
-  scrub: true,
-  invalidateOnRefresh: true
+trigger: card,
+start: 'top bottom',
+end: 'top top',
+scrub: true,
+invalidateOnRefresh: true
 }
 })
 .fromTo(previousCard, { yPercent: 0 }, { yPercent: 50 })
@@ -257,13 +257,13 @@ items[1].style.pointerEvents = 'none';
 items[1].classList.add('is--second');
 
 if (items[2]) {
-  items[2].style.zIndex = 1;
-  items[2].style.transform = `rotate(${activeDeg}deg)`;
+items[2].style.zIndex = 1;
+items[2].style.transform = `rotate(${activeDeg}deg)`;
 }
 
 for (let i = 3; i < items.length; i++) {
-  items[i].style.zIndex = 0;
-  items[i].style.transform = `rotate(${inactiveDeg}deg)`;
+items[i].style.zIndex = 0;
+items[i].style.transform = `rotate(${inactiveDeg}deg)`;
 }
 }
 
@@ -287,51 +287,51 @@ dragFirst?.kill();
 dragSecond?.kill();
 
 dragFirst = Draggable.create(firstEl, {
-  type: 'x',
-  onPress()   { firstEl.classList.add('is--dragging'); },
-  onRelease() { firstEl.classList.remove('is--dragging'); },
-  onDrag() {
-    let raw = this.x;
-    if (Math.abs(raw) > full) {
-      const over = Math.abs(raw) - full;
-      raw = (raw > 0 ? 1 : -1) * (full + over * 0.1);
-    }
-    gsap.set(firstEl, { x: raw, rotation: 0 });
-  },
-  onDragEnd() {
-    const x = this.x;
-    const dir = x > 0 ? 'right' : 'left';
-
-    this.disable?.();
-    dragSecond?.enable?.();
-    firstItem.style.pointerEvents = 'none';
-    secondItem.style.pointerEvents = 'auto';
-
-    if (Math.abs(x) <= t) {
-      gsap.to(firstEl, { x: 0, rotation: 0, ...easeBeforeRelease, onComplete: resetCycle });
-    } else if (Math.abs(x) <= full) {
-      flick(dir, false, x);
-    } else {
-      flick(dir, true);
-    }
+type: 'x',
+onPress()   { firstEl.classList.add('is--dragging'); },
+onRelease() { firstEl.classList.remove('is--dragging'); },
+onDrag() {
+  let raw = this.x;
+  if (Math.abs(raw) > full) {
+    const over = Math.abs(raw) - full;
+    raw = (raw > 0 ? 1 : -1) * (full + over * 0.1);
   }
+  gsap.set(firstEl, { x: raw, rotation: 0 });
+},
+onDragEnd() {
+  const x = this.x;
+  const dir = x > 0 ? 'right' : 'left';
+
+  this.disable?.();
+  dragSecond?.enable?.();
+  firstItem.style.pointerEvents = 'none';
+  secondItem.style.pointerEvents = 'auto';
+
+  if (Math.abs(x) <= t) {
+    gsap.to(firstEl, { x: 0, rotation: 0, ...easeBeforeRelease, onComplete: resetCycle });
+  } else if (Math.abs(x) <= full) {
+    flick(dir, false, x);
+  } else {
+    flick(dir, true);
+  }
+}
 })[0];
 
 dragSecond = Draggable.create(secondEl, {
-  type: 'x',
-  onPress()   { secondEl.classList.add('is--dragging'); },
-  onRelease() { secondEl.classList.remove('is--dragging'); },
-  onDrag() {
-    let raw = this.x;
-    if (Math.abs(raw) > full) {
-      const over = Math.abs(raw) - full;
-      raw = (raw > 0 ? 1 : -1) * (full + over * 0.2);
-    }
-    gsap.set(secondEl, { x: raw, rotation: 0 });
-  },
-  onDragEnd() {
-    gsap.to(secondEl, { x: 0, rotation: 0, ...easeBeforeRelease });
+type: 'x',
+onPress()   { secondEl.classList.add('is--dragging'); },
+onRelease() { secondEl.classList.remove('is--dragging'); },
+onDrag() {
+  let raw = this.x;
+  if (Math.abs(raw) > full) {
+    const over = Math.abs(raw) - full;
+    raw = (raw > 0 ? 1 : -1) * (full + over * 0.2);
   }
+  gsap.set(secondEl, { x: raw, rotation: 0 });
+},
+onDragEnd() {
+  gsap.to(secondEl, { x: 0, rotation: 0, ...easeBeforeRelease });
+}
 })[0];
 
 dragFirst?.enable?.();
@@ -350,29 +350,29 @@ if (!item || !card) return;
 const exitX = dir === 'right' ? full : -full;
 
 if (skipHome) {
-  const visualX = gsap.getProperty(card, 'x');
-  list.appendChild(item);
-  [activeDeg, inactiveDeg] = [inactiveDeg, activeDeg];
-  restack();
-  gsap.fromTo(card, { x: visualX, rotation: 0 }, { x: 0, rotation: 0, ...easeAfterRelease, onComplete: resetCycle });
+const visualX = gsap.getProperty(card, 'x');
+list.appendChild(item);
+[activeDeg, inactiveDeg] = [inactiveDeg, activeDeg];
+restack();
+gsap.fromTo(card, { x: visualX, rotation: 0 }, { x: 0, rotation: 0, ...easeAfterRelease, onComplete: resetCycle });
 } else {
-  gsap.fromTo(card, { x: releaseX, rotation: 0 }, {
-    x: exitX, ...easeBeforeRelease,
-    onComplete() {
-      gsap.set(card, { x: 0, rotation: 0 });
-      list.appendChild(item);
-      [activeDeg, inactiveDeg] = [inactiveDeg, activeDeg];
-      resetCycle();
-      const newCard = item.querySelector('[data-stacked-cards-card]');
-      if (newCard) gsap.fromTo(newCard, { x: exitX }, { x: 0, ...easeAfterRelease, onComplete: resetCycle });
-    }
-  });
+gsap.fromTo(card, { x: releaseX, rotation: 0 }, {
+  x: exitX, ...easeBeforeRelease,
+  onComplete() {
+    gsap.set(card, { x: 0, rotation: 0 });
+    list.appendChild(item);
+    [activeDeg, inactiveDeg] = [inactiveDeg, activeDeg];
+    resetCycle();
+    const newCard = item.querySelector('[data-stacked-cards-card]');
+    if (newCard) gsap.fromTo(newCard, { x: exitX }, { x: 0, ...easeAfterRelease, onComplete: resetCycle });
+  }
+});
 }
 }
 
 function resetCycle() {
 list.querySelectorAll('[data-stacked-cards-card].is--dragging')
-  .forEach((el) => el.classList.remove('is--dragging'));
+.forEach((el) => el.classList.remove('is--dragging'));
 setupDraggables();
 }
 
@@ -423,19 +423,19 @@ const cx = Math.floor(x / cellSize);
 const cy = Math.floor(y / cellSize);
 const out = [];
 for (let oy = -1; oy <= 1; oy++) {
-  for (let ox = -1; ox <= 1; ox++) {
-    const arr = hash.get(`${cx + ox}:${cy + oy}`);
-    if (arr) out.push(...arr);
-  }
+for (let ox = -1; ox <= 1; ox++) {
+  const arr = hash.get(`${cx + ox}:${cy + oy}`);
+  if (arr) out.push(...arr);
+}
 }
 return out;
 }
 
 function tintDot(el, color) {
 if (el._svg && el._svgFillEls?.length) {
-  el._svgFillEls.forEach(n => n.setAttribute('fill', color));
+el._svgFillEls.forEach(n => n.setAttribute('fill', color));
 } else {
-  gsap.set(el, { backgroundColor: color });
+gsap.set(el, { backgroundColor: color });
 }
 }
 
@@ -467,49 +467,49 @@ const startCol = (cols - holeCols) / 2;
 const startRow = (rows - holeRows) / 2;
 
 for (let i = 0; i < total; i++) {
-  const row = Math.floor(i / cols);
-  const col = i % cols;
-  const isHole = centerHole &&
-    row >= startRow && row < startRow + holeRows &&
-    col >= startCol && col < startCol + holeCols;
+const row = Math.floor(i / cols);
+const col = i % cols;
+const isHole = centerHole &&
+  row >= startRow && row < startRow + holeRows &&
+  col >= startCol && col < startCol + holeCols;
 
-  const d = document.createElement('div');
-  d.className = 'dot';
-  d.style.willChange = 'transform';
+const d = document.createElement('div');
+d.className = 'dot';
+d.style.willChange = 'transform';
 
-  if (isHole) {
-    d.style.visibility = 'hidden';
-    d._isHole = true;
-  } else {
-    if (svgTemplate) {
-      const svg = svgTemplate.cloneNode(true);
-      svg.style.display = '';
-      svg.setAttribute('aria-hidden', 'true');
-      d.appendChild(svg);
-      d._svg = svg;
+if (isHole) {
+  d.style.visibility = 'hidden';
+  d._isHole = true;
+} else {
+  if (svgTemplate) {
+    const svg = svgTemplate.cloneNode(true);
+    svg.style.display = '';
+    svg.setAttribute('aria-hidden', 'true');
+    d.appendChild(svg);
+    d._svg = svg;
 
-      const fillMarked = svg.querySelectorAll('[data-dot-fill]');
-      const withFillAttr = svg.querySelectorAll('[fill]');
-      d._svgFillEls = fillMarked.length ? fillMarked :
-        (withFillAttr.length ? withFillAttr :
-         svg.querySelectorAll('path, rect, circle, polygon, ellipse'));
-    }
-    d._inertiaApplied = false;
-    tintDot(d, colors.base);
+    const fillMarked = svg.querySelectorAll('[data-dot-fill]');
+    const withFillAttr = svg.querySelectorAll('[fill]');
+    d._svgFillEls = fillMarked.length ? fillMarked :
+      (withFillAttr.length ? withFillAttr :
+       svg.querySelectorAll('path, rect, circle, polygon, ellipse'));
   }
+  d._inertiaApplied = false;
+  tintDot(d, colors.base);
+}
 
-  container.appendChild(d);
-  if (!d._isHole) dots.push(d);
+container.appendChild(d);
+if (!d._isHole) dots.push(d);
 }
 
 requestAnimationFrame(() => {
-  centers = dots.map(el => {
-    const r = el.getBoundingClientRect();
-    const x = r.left + window.scrollX + r.width / 2;
-    const y = r.top  + window.scrollY + r.height / 2;
-    return { el, x, y };
-  });
-  centers.forEach((c, i) => indexIntoHash(i, c.x, c.y));
+centers = dots.map(el => {
+  const r = el.getBoundingClientRect();
+  const x = r.left + window.scrollX + r.width / 2;
+  const y = r.top  + window.scrollY + r.height / 2;
+  return { el, x, y };
+});
+centers.forEach((c, i) => indexIntoHash(i, c.x, c.y));
 });
 }
 
@@ -528,8 +528,8 @@ let vy = dy / dt * 1000;
 let speed = Math.hypot(vx, vy);
 
 if (speed > maxSpeed) {
-  const s = maxSpeed / speed;
-  vx *= s; vy *= s; speed = maxSpeed;
+const s = maxSpeed / speed;
+vx *= s; vy *= s; speed = maxSpeed;
 }
 
 lastTime = now; lastX = e.pageX; lastY = e.pageY;
@@ -538,29 +538,29 @@ const nearby = getNearbyIndices(e.pageX, e.pageY);
 if (!nearby.length) return;
 
 requestAnimationFrame(() => {
-  for (let i = 0; i < nearby.length; i++) {
-    const c = centers[nearby[i]];
-    const el = c.el;
-    const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
-    if (dist > threshold) continue;
+for (let i = 0; i < nearby.length; i++) {
+  const c = centers[nearby[i]];
+  const el = c.el;
+  const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
+  if (dist > threshold) continue;
 
-    const t = 1 - dist / threshold;
-    const col = gsap.utils.interpolate(colors.base, colors.active, t);
-    tintDot(el, col);
+  const t = 1 - dist / threshold;
+  const col = gsap.utils.interpolate(colors.base, colors.active, t);
+  tintDot(el, col);
 
-    if (speed > speedThreshold && !el._inertiaApplied) {
-      el._inertiaApplied = true;
-      const pushX = (c.x - e.pageX) + vx * 0.005;
-      const pushY = (c.y - e.pageY) + vy * 0.005;
-      gsap.to(el, {
-        inertia: { x: pushX, y: pushY, resistance: 750 },
-        onComplete() {
-          gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-          el._inertiaApplied = false;
-        }
-      });
-    }
+  if (speed > speedThreshold && !el._inertiaApplied) {
+    el._inertiaApplied = true;
+    const pushX = (c.x - e.pageX) + vx * 0.005;
+    const pushY = (c.y - e.pageY) + vy * 0.005;
+    gsap.to(el, {
+      inertia: { x: pushX, y: pushY, resistance: 750 },
+      onComplete() {
+        gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
+        el._inertiaApplied = false;
+      }
+    });
   }
+}
 });
 }, { passive: true });
 
@@ -569,23 +569,23 @@ const nearby = getNearbyIndices(e.pageX, e.pageY);
 if (!nearby.length) return;
 
 for (let i = 0; i < nearby.length; i++) {
-  const c = centers[nearby[i]];
-  const el = c.el;
-  const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
-  if (dist >= shockRadius || el._inertiaApplied) continue;
+const c = centers[nearby[i]];
+const el = c.el;
+const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
+if (dist >= shockRadius || el._inertiaApplied) continue;
 
-  el._inertiaApplied = true;
-  const falloff = 1 - dist / shockRadius;
-  const pushX   = (c.x - e.pageX) * shockPower * falloff;
-  const pushY   = (c.y - e.pageY) * shockPower * falloff;
+el._inertiaApplied = true;
+const falloff = 1 - dist / shockRadius;
+const pushX   = (c.x - e.pageX) * shockPower * falloff;
+const pushY   = (c.y - e.pageY) * shockPower * falloff;
 
-  gsap.to(el, {
-    inertia: { x: pushX, y: pushY, resistance: 750 },
-    onComplete() {
-      gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-      el._inertiaApplied = false;
-    }
-  });
+gsap.to(el, {
+  inertia: { x: pushX, y: pushY, resistance: 750 },
+  onComplete() {
+    gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
+    el._inertiaApplied = false;
+  }
+});
 }
 }, { passive: true });
 });
@@ -675,7 +675,7 @@ const durEl = lightbox.querySelector('[data-vimeo-duration]');
 player.getDuration().then(d => {
 if (durEl) durEl.textContent = formatTime(d);
 lightbox.querySelectorAll('[data-vimeo-control="timeline"],progress')
-  .forEach(el => { el.max = d; });
+.forEach(el => { el.max = d; });
 });
 
 const tl = lightbox.querySelector('[data-vimeo-control="timeline"]');
@@ -687,18 +687,18 @@ if (durEl) durEl.textContent = formatTime(Math.trunc(data.seconds));
 });
 if (tl) {
 ['input','change'].forEach(evt => tl.addEventListener(evt, (e) => {
-  const v = e.target.value;
-  player.setCurrentTime(v);
-  if (pr) pr.value = v;
+const v = e.target.value;
+player.setCurrentTime(v);
+if (pr) pr.value = v;
 }));
 }
 
 let hoverTimer;
 if (playerContainer) {
 playerContainer.addEventListener('mousemove', () => {
-  lightbox.setAttribute('data-vimeo-hover', 'true');
-  clearTimeout(hoverTimer);
-  hoverTimer = setTimeout(() => { lightbox.setAttribute('data-vimeo-hover', 'false'); }, 3000);
+lightbox.setAttribute('data-vimeo-hover', 'true');
+clearTimeout(hoverTimer);
+hoverTimer = setTimeout(() => { lightbox.setAttribute('data-vimeo-hover', 'false'); }, 3000);
 });
 }
 
@@ -706,21 +706,21 @@ const fsBtn = lightbox.querySelector('[data-vimeo-control="fullscreen"]');
 if (fsBtn) {
 const isFS = () => document.fullscreenElement || document.webkitFullscreenElement;
 if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) {
-  fsBtn.style.display = 'none';
+fsBtn.style.display = 'none';
 }
 fsBtn.addEventListener('click', () => {
-  if (isFS()) {
-    lightbox.setAttribute('data-vimeo-fullscreen', 'false');
-    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-  } else if (playerContainer) {
-    lightbox.setAttribute('data-vimeo-fullscreen', 'true');
-    (playerContainer.requestFullscreen || playerContainer.webkitRequestFullscreen).call(playerContainer);
-  }
+if (isFS()) {
+  lightbox.setAttribute('data-vimeo-fullscreen', 'false');
+  (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+} else if (playerContainer) {
+  lightbox.setAttribute('data-vimeo-fullscreen', 'true');
+  (playerContainer.requestFullscreen || playerContainer.webkitRequestFullscreen).call(playerContainer);
+}
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-  document.addEventListener(evt, () =>
-    lightbox.setAttribute('data-vimeo-fullscreen', isFS() ? 'true' : 'false')
-  )
+document.addEventListener(evt, () =>
+  lightbox.setAttribute('data-vimeo-fullscreen', isFS() ? 'true' : 'false')
+)
 );
 }
 }
@@ -770,8 +770,8 @@ lightbox.setAttribute('data-vimeo-playing', 'false');
 
 if (placeholderBtn && placeholder) {
 ['src','srcset','sizes','alt','width'].forEach(attr => {
-  const val = placeholderBtn.getAttribute(attr);
-  if (val != null) placeholder.setAttribute(attr, val);
+const val = placeholderBtn.getAttribute(attr);
+if (val != null) placeholder.setAttribute(attr, val);
 });
 }
 
@@ -787,13 +787,13 @@ lightbox.setAttribute('data-vimeo-activated', 'true');
 
 if (!isTouch) {
 player.setVolume(globalMuted ? 0 : 1).then(() => {
-  lightbox.setAttribute('data-vimeo-playing', 'true');
-  setTimeout(() => player.play(), 50);
+lightbox.setAttribute('data-vimeo-playing', 'true');
+setTimeout(() => player.play(), 50);
 });
 } else if (playedOnce.has(currentVideoID)) {
 player.setVolume(globalMuted ? 0 : 1).then(() => {
-  lightbox.setAttribute('data-vimeo-playing', 'true');
-  player.play();
+lightbox.setAttribute('data-vimeo-playing', 'true');
+player.play();
 });
 }
 }
@@ -806,27 +806,27 @@ playBtn?.addEventListener('click', () => {
 if (!player) return;
 if (isTouch) {
 if (!playedOnce.has(currentVideoID)) {
-  player.setVolume(0).then(() => {
-    lightbox.setAttribute('data-vimeo-playing', 'true');
-    player.play();
-    if (!globalMuted) {
-      setTimeout(() => {
-        player.setVolume(1);
-        lightbox.setAttribute('data-vimeo-muted', 'false');
-      }, 100);
-    }
-    playedOnce.add(currentVideoID);
-  });
-} else {
-  player.setVolume(globalMuted ? 0 : 1).then(() => {
-    lightbox.setAttribute('data-vimeo-playing', 'true');
-    player.play();
-  });
-}
+player.setVolume(0).then(() => {
+  lightbox.setAttribute('data-vimeo-playing', 'true');
+  player.play();
+  if (!globalMuted) {
+    setTimeout(() => {
+      player.setVolume(1);
+      lightbox.setAttribute('data-vimeo-muted', 'false');
+    }, 100);
+  }
+  playedOnce.add(currentVideoID);
+});
 } else {
 player.setVolume(globalMuted ? 0 : 1).then(() => {
   lightbox.setAttribute('data-vimeo-playing', 'true');
-  setTimeout(() => player.play(), 50);
+  player.play();
+});
+}
+} else {
+player.setVolume(globalMuted ? 0 : 1).then(() => {
+lightbox.setAttribute('data-vimeo-playing', 'true');
+setTimeout(() => player.play(), 50);
 });
 }
 });
@@ -851,30 +851,46 @@ if (vid) openLightbox(vid, img);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-/** Offset-aware smooth scroll for buttons using [data-button-offset] */
+
+
+// Always scroll 6em further down when a link has [data-button-offset]
 function initButtonOffsetSmoothScroll() {
-document.addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-button-offset]");
+const SIX_EM = 6 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+
+document.addEventListener('click', onClick, { passive: false });
+
+function onClick(e) {
+  const btn = e.target.closest('[data-button-offset]');
   if (!btn) return;
 
-  const id = btn.getAttribute("href")?.split("#")[1];
+  const href = btn.getAttribute('href') || '';
+  const id = href.includes('#') ? href.split('#')[1] : '';
   if (!id) return;
 
-  const target = document.getElementById(id);
+  const target = document.getElementById(id) || document.getElementsByName(id)[0];
   if (!target) return;
 
   e.preventDefault();
 
-  const offset = 6 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+  // Compute absolute Y, add fixed 6em
+  const rect = target.getBoundingClientRect();
+  let y = window.scrollY + rect.top + SIX_EM;
 
-  if (window.lenis && typeof window.lenis.scrollTo === "function") {
-    window.lenis.scrollTo(target, { offset });
+  // Clamp within page bounds
+  const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  if (y > max) y = max;
+  if (y < 0) y = 0;
+
+  // Use Lenis if present; fallback to native
+  if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+    window.lenis.scrollTo(y);
   } else {
-    const rect = target.getBoundingClientRect();
-    const y = window.scrollY + rect.top + offset;
-    window.scrollTo({ top: y, behavior: "smooth" });
+    window.scrollTo({ top: y, behavior: 'smooth' });
   }
-});
+
+  // Update hash without native jump
+  if (target.id) history.pushState(null, '', `#${encodeURIComponent(target.id)}`);
+}
 }
 
 
@@ -913,9 +929,9 @@ if (fromIndex === toIndex) return;
 const tl = gsap.timeline({ defaults: { overwrite: 'auto' } });
 
 if (fromIndex < toIndex){
-  tl.to(visualWraps[toIndex], { clipPath: 'inset(0% round 0.75em)', duration: DURATION, ease: EASE }, 0);
+tl.to(visualWraps[toIndex], { clipPath: 'inset(0% round 0.75em)', duration: DURATION, ease: EASE }, 0);
 } else {
-  tl.to(visualWraps[fromIndex], { clipPath: 'inset(50% round 0.75em)', duration: DURATION, ease: EASE }, 0);
+tl.to(visualWraps[fromIndex], { clipPath: 'inset(50% round 0.75em)', duration: DURATION, ease: EASE }, 0);
 }
 animateOut(items[fromIndex]);
 animateIn(items[toIndex]);
@@ -924,11 +940,11 @@ animateIn(items[toIndex]);
 function animateOut(itemEl){
 const texts = getTexts(itemEl);
 gsap.to(texts, {
-  autoAlpha: 0,
-  y: -30,
-  ease: 'power4.out',
-  duration: 0.4,
-  onComplete: () => gsap.set(itemEl, { autoAlpha: 0 })
+autoAlpha: 0,
+y: -30,
+ease: 'power4.out',
+duration: 0.4,
+onComplete: () => gsap.set(itemEl, { autoAlpha: 0 })
 });
 }
 
@@ -936,11 +952,11 @@ function animateIn(itemEl){
 const texts = getTexts(itemEl);
 gsap.set(itemEl, { autoAlpha: 1 });
 gsap.fromTo(texts, { autoAlpha: 0, y: 30 }, {
-  autoAlpha: 1,
-  y: 0,
-  ease: 'power4.out',
-  duration: DURATION,
-  stagger: 0.1
+autoAlpha: 1,
+y: 0,
+ease: 'power4.out',
+duration: DURATION,
+stagger: 0.1
 });
 }
 
@@ -954,18 +970,18 @@ pin: true,
 scrub: true,
 invalidateOnRefresh: true,
 onUpdate: self => {
-  const p = Math.min(self.progress, SCROLL_AMOUNT) / SCROLL_AMOUNT;
-  let idx = Math.floor(p * steps + 1e-6);
-  idx = Math.max(0, Math.min(steps, idx));
+const p = Math.min(self.progress, SCROLL_AMOUNT) / SCROLL_AMOUNT;
+let idx = Math.floor(p * steps + 1e-6);
+idx = Math.max(0, Math.min(steps, idx));
 
-  if (progressBar) {
-    gsap.to(progressBar, { scaleX: p, ease: 'none' });
-  }
+if (progressBar) {
+  gsap.to(progressBar, { scaleX: p, ease: 'none' });
+}
 
-  if (idx !== currentIndex) {
-    transition(currentIndex, idx);
-    currentIndex = idx;
-  }
+if (idx !== currentIndex) {
+  transition(currentIndex, idx);
+  currentIndex = idx;
+}
 }
 });
 });
@@ -1011,8 +1027,8 @@ const cs = item.querySelectorAll('[data-filter-name-collect]');
 if (!cs.length) return;
 const seen = new Set(), out = [];
 cs.forEach(c => {
-  const v = (c.getAttribute('data-filter-name-collect') || '').trim().toLowerCase();
-  if (v && !seen.has(v)) { seen.add(v); out.push(v); }
+const v = (c.getAttribute('data-filter-name-collect') || '').trim().toLowerCase();
+if (v && !seen.has(v)) { seen.add(v); out.push(v); }
 });
 if (out.length) item.setAttribute('data-filter-name', out.join(' '));
 });
@@ -1026,15 +1042,15 @@ itemTokens.set(el, new Set(tokens));
 const setItemState = (el, on) => {
 const next = on ? 'active' : 'not-active';
 if (el.getAttribute('data-filter-status') !== next) {
-  el.setAttribute('data-filter-status', next);
-  el.setAttribute('aria-hidden', on ? 'false' : 'true');
+el.setAttribute('data-filter-status', next);
+el.setAttribute('aria-hidden', on ? 'false' : 'true');
 }
 };
 const setButtonState = (btn, on) => {
 const next = on ? 'active' : 'not-active';
 if (btn.getAttribute('data-filter-status') !== next) {
-  btn.setAttribute('data-filter-status', next);
-  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+btn.setAttribute('data-filter-status', next);
+btn.setAttribute('aria-pressed', on ? 'true' : 'false');
 }
 };
 
@@ -1046,22 +1062,22 @@ const target = (rawTarget || '').trim().toLowerCase();
 activeTarget = (!target || target === 'all') ? 'all' : target;
 
 items.forEach(el => {
-  if (el._ft) clearTimeout(el._ft);
-  const next = itemMatches(el);
-  const cur = el.getAttribute('data-filter-status');
-  if (cur === 'active' && transitionDelay > 0) {
-    el.setAttribute('data-filter-status', 'transition-out');
-    el._ft = setTimeout(() => { setItemState(el, next); el._ft = null; }, transitionDelay);
-  } else if (transitionDelay > 0) {
-    el._ft = setTimeout(() => { setItemState(el, next); el._ft = null; }, transitionDelay);
-  } else {
-    setItemState(el, next);
-  }
+if (el._ft) clearTimeout(el._ft);
+const next = itemMatches(el);
+const cur = el.getAttribute('data-filter-status');
+if (cur === 'active' && transitionDelay > 0) {
+  el.setAttribute('data-filter-status', 'transition-out');
+  el._ft = setTimeout(() => { setItemState(el, next); el._ft = null; }, transitionDelay);
+} else if (transitionDelay > 0) {
+  el._ft = setTimeout(() => { setItemState(el, next); el._ft = null; }, transitionDelay);
+} else {
+  setItemState(el, next);
+}
 });
 
 buttons.forEach(btn => {
-  const t = (btn.getAttribute('data-filter-target') || '').trim().toLowerCase();
-  setButtonState(btn, (activeTarget === 'all' && t === 'all') || (t && t === activeTarget));
+const t = (btn.getAttribute('data-filter-target') || '').trim().toLowerCase();
+setButtonState(btn, (activeTarget === 'all' && t === 'all') || (t && t === activeTarget));
 });
 };
 
