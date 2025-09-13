@@ -56,18 +56,18 @@ type: 'words, chars',
 autoSplit: true,
 onSplit(self) {
 const ctx = gsap.context(() => {
-  gsap.timeline({
-    scrollTrigger: {
-      scrub: true,
-      trigger: heading,
-      start: scrollStart,
-      end: scrollEnd,
-    }
-  }).from(self.chars, {
-    autoAlpha: fadedValue,
-    stagger: staggerValue,
-    ease: 'linear'
-  });
+gsap.timeline({
+  scrollTrigger: {
+    scrub: true,
+    trigger: heading,
+    start: scrollStart,
+    end: scrollEnd,
+  }
+}).from(self.chars, {
+  autoAlpha: fadedValue,
+  stagger: staggerValue,
+  ease: 'linear'
+});
 });
 return ctx;
 }
@@ -94,43 +94,43 @@ const { isMobile, isMobileLandscape, isTablet } = context.conditions;
 
 const ctx = gsap.context(() => {
 document.querySelectorAll('[data-parallax="trigger"]').forEach((trigger) => {
-  const disable = trigger.getAttribute('data-parallax-disable');
-  if (
-    (disable === 'mobile' && isMobile) ||
-    (disable === 'mobileLandscape' && isMobileLandscape) ||
-    (disable === 'tablet' && isTablet)
-  ) return;
+const disable = trigger.getAttribute('data-parallax-disable');
+if (
+  (disable === 'mobile' && isMobile) ||
+  (disable === 'mobileLandscape' && isMobileLandscape) ||
+  (disable === 'tablet' && isTablet)
+) return;
 
-  const target = trigger.querySelector('[data-parallax="target"]') || trigger;
-  const direction = trigger.getAttribute('data-parallax-direction') || 'vertical';
-  const prop = direction === 'horizontal' ? 'xPercent' : 'yPercent';
+const target = trigger.querySelector('[data-parallax="target"]') || trigger;
+const direction = trigger.getAttribute('data-parallax-direction') || 'vertical';
+const prop = direction === 'horizontal' ? 'xPercent' : 'yPercent';
 
-  const scrubAttr = trigger.getAttribute('data-parallax-scrub');
-  const scrub = scrubAttr ? parseFloat(scrubAttr) : true;
+const scrubAttr = trigger.getAttribute('data-parallax-scrub');
+const scrub = scrubAttr ? parseFloat(scrubAttr) : true;
 
-  const startVal = trigger.hasAttribute('data-parallax-start')
-    ? parseFloat(trigger.getAttribute('data-parallax-start')) : 20;
+const startVal = trigger.hasAttribute('data-parallax-start')
+  ? parseFloat(trigger.getAttribute('data-parallax-start')) : 20;
 
-  const endVal = trigger.hasAttribute('data-parallax-end')
-    ? parseFloat(trigger.getAttribute('data-parallax-end')) : -20;
+const endVal = trigger.hasAttribute('data-parallax-end')
+  ? parseFloat(trigger.getAttribute('data-parallax-end')) : -20;
 
-  const scrollStartRaw = trigger.getAttribute('data-parallax-scroll-start') || 'top bottom';
-  const scrollEndRaw   = trigger.getAttribute('data-parallax-scroll-end')   || 'bottom top';
+const scrollStartRaw = trigger.getAttribute('data-parallax-scroll-start') || 'top bottom';
+const scrollEndRaw   = trigger.getAttribute('data-parallax-scroll-end')   || 'bottom top';
 
-  gsap.fromTo(
-    target,
-    { [prop]: startVal },
-    {
-      [prop]: endVal,
-      ease: 'none',
-      scrollTrigger: {
-        trigger,
-        start: `clamp(${scrollStartRaw})`,
-        end:   `clamp(${scrollEndRaw})`,
-        scrub,
-      },
-    }
-  );
+gsap.fromTo(
+  target,
+  { [prop]: startVal },
+  {
+    [prop]: endVal,
+    ease: 'none',
+    scrollTrigger: {
+      trigger,
+      start: `clamp(${scrollStartRaw})`,
+      end:   `clamp(${scrollEndRaw})`,
+      scrub,
+    },
+  }
+);
 });
 });
 
@@ -167,10 +167,10 @@ const targetIdx = String(idx);
 imgs.forEach(img => {
 const isMatch = String(img.dataset.parallaxImage) === targetIdx;
 gsap.to(img, {
-  autoAlpha: isMatch ? 1 : 0,
-  duration: 0.8,
-  ease: 'power2.inOut',
-  overwrite: 'auto'
+autoAlpha: isMatch ? 1 : 0,
+duration: 0.8,
+ease: 'power2.inOut',
+overwrite: 'auto'
 });
 });
 };
@@ -291,29 +291,29 @@ type: 'x',
 onPress()   { firstEl.classList.add('is--dragging'); },
 onRelease() { firstEl.classList.remove('is--dragging'); },
 onDrag() {
-  let raw = this.x;
-  if (Math.abs(raw) > full) {
-    const over = Math.abs(raw) - full;
-    raw = (raw > 0 ? 1 : -1) * (full + over * 0.1);
-  }
-  gsap.set(firstEl, { x: raw, rotation: 0 });
+let raw = this.x;
+if (Math.abs(raw) > full) {
+  const over = Math.abs(raw) - full;
+  raw = (raw > 0 ? 1 : -1) * (full + over * 0.1);
+}
+gsap.set(firstEl, { x: raw, rotation: 0 });
 },
 onDragEnd() {
-  const x = this.x;
-  const dir = x > 0 ? 'right' : 'left';
+const x = this.x;
+const dir = x > 0 ? 'right' : 'left';
 
-  this.disable?.();
-  dragSecond?.enable?.();
-  firstItem.style.pointerEvents = 'none';
-  secondItem.style.pointerEvents = 'auto';
+this.disable?.();
+dragSecond?.enable?.();
+firstItem.style.pointerEvents = 'none';
+secondItem.style.pointerEvents = 'auto';
 
-  if (Math.abs(x) <= t) {
-    gsap.to(firstEl, { x: 0, rotation: 0, ...easeBeforeRelease, onComplete: resetCycle });
-  } else if (Math.abs(x) <= full) {
-    flick(dir, false, x);
-  } else {
-    flick(dir, true);
-  }
+if (Math.abs(x) <= t) {
+  gsap.to(firstEl, { x: 0, rotation: 0, ...easeBeforeRelease, onComplete: resetCycle });
+} else if (Math.abs(x) <= full) {
+  flick(dir, false, x);
+} else {
+  flick(dir, true);
+}
 }
 })[0];
 
@@ -322,15 +322,15 @@ type: 'x',
 onPress()   { secondEl.classList.add('is--dragging'); },
 onRelease() { secondEl.classList.remove('is--dragging'); },
 onDrag() {
-  let raw = this.x;
-  if (Math.abs(raw) > full) {
-    const over = Math.abs(raw) - full;
-    raw = (raw > 0 ? 1 : -1) * (full + over * 0.2);
-  }
-  gsap.set(secondEl, { x: raw, rotation: 0 });
+let raw = this.x;
+if (Math.abs(raw) > full) {
+  const over = Math.abs(raw) - full;
+  raw = (raw > 0 ? 1 : -1) * (full + over * 0.2);
+}
+gsap.set(secondEl, { x: raw, rotation: 0 });
 },
 onDragEnd() {
-  gsap.to(secondEl, { x: 0, rotation: 0, ...easeBeforeRelease });
+gsap.to(secondEl, { x: 0, rotation: 0, ...easeBeforeRelease });
 }
 })[0];
 
@@ -357,15 +357,15 @@ restack();
 gsap.fromTo(card, { x: visualX, rotation: 0 }, { x: 0, rotation: 0, ...easeAfterRelease, onComplete: resetCycle });
 } else {
 gsap.fromTo(card, { x: releaseX, rotation: 0 }, {
-  x: exitX, ...easeBeforeRelease,
-  onComplete() {
-    gsap.set(card, { x: 0, rotation: 0 });
-    list.appendChild(item);
-    [activeDeg, inactiveDeg] = [inactiveDeg, activeDeg];
-    resetCycle();
-    const newCard = item.querySelector('[data-stacked-cards-card]');
-    if (newCard) gsap.fromTo(newCard, { x: exitX }, { x: 0, ...easeAfterRelease, onComplete: resetCycle });
-  }
+x: exitX, ...easeBeforeRelease,
+onComplete() {
+  gsap.set(card, { x: 0, rotation: 0 });
+  list.appendChild(item);
+  [activeDeg, inactiveDeg] = [inactiveDeg, activeDeg];
+  resetCycle();
+  const newCard = item.querySelector('[data-stacked-cards-card]');
+  if (newCard) gsap.fromTo(newCard, { x: exitX }, { x: 0, ...easeAfterRelease, onComplete: resetCycle });
+}
 });
 }
 }
@@ -385,209 +385,223 @@ btn.addEventListener('click', () => flick());
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Glowing Interactive Dots Grid (InertiaPlugin)
+// Glowing Interactive Dots Grid (hover-only interactivity)
 // ──────────────────────────────────────────────────────────────────────────────
 function initGlowingInteractiveDotsGrid() {
-if (typeof gsap === 'undefined' || typeof InertiaPlugin === 'undefined') return;
+if (typeof gsap === 'undefined') return;
+
+// Interactivity only if the device supports hover and a fine pointer (mouse/trackpad)
+const supportsHoverFine = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
 
 document.querySelectorAll('[data-dots-container-init]').forEach(container => {
-const colors         = { base: '#FFFFFF0D', active: '#FFFFFF' };
-const threshold      = 200;
-const speedThreshold = 100;
-const shockRadius    = 325;
-const shockPower     = 5;
-const maxSpeed       = 5000;
-const centerHole     = true;
+  const colors         = { base: '#FFFFFF0D', active: '#FFFFFF' };
+  const threshold      = 200;
+  const speedThreshold = 100;
+  const shockRadius    = 325;
+  const shockPower     = 5;
+  const maxSpeed       = 5000;
+  const centerHole     = true;
 
-const maxCols = 60;
-const maxRows = 40;
+  const maxCols = 60;
+  const maxRows = 40;
 
-const svgTemplate = container.querySelector('.dot-svg') || document.querySelector('.dot-svg');
+  const svgTemplate = container.querySelector('.dot-svg') || document.querySelector('.dot-svg');
 
-let dots = [];
-let centers = [];
-let hash = new Map();
-const cellSize = threshold;
+  let dots = [];
+  let centers = [];
+  let hash = new Map();
+  const cellSize = threshold;
 
-const keyFor = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
+  const keyFor = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
 
-function indexIntoHash(i, x, y) {
-const k = keyFor(x, y);
-const arr = hash.get(k) || [];
-if (!arr.length) hash.set(k, arr);
-arr.push(i);
-}
-
-function getNearbyIndices(x, y) {
-const cx = Math.floor(x / cellSize);
-const cy = Math.floor(y / cellSize);
-const out = [];
-for (let oy = -1; oy <= 1; oy++) {
-for (let ox = -1; ox <= 1; ox++) {
-  const arr = hash.get(`${cx + ox}:${cy + oy}`);
-  if (arr) out.push(...arr);
-}
-}
-return out;
-}
-
-function tintDot(el, color) {
-if (el._svg && el._svgFillEls?.length) {
-el._svgFillEls.forEach(n => n.setAttribute('fill', color));
-} else {
-gsap.set(el, { backgroundColor: color });
-}
-}
-
-function buildGrid() {
-container.innerHTML = '';
-dots = [];
-centers = [];
-hash.clear();
-
-const style = getComputedStyle(container);
-const dotPx = parseFloat(style.fontSize);
-const gapPx = dotPx * 2;
-const contW = container.clientWidth;
-const contH = container.clientHeight;
-
-let cols  = Math.floor((contW + gapPx) / (dotPx + gapPx));
-let rows  = Math.floor((contH + gapPx) / (dotPx + gapPx));
-
-const colStep = Math.max(1, Math.ceil(cols / maxCols));
-const rowStep = Math.max(1, Math.ceil(rows / maxRows));
-cols = Math.ceil(cols / colStep);
-rows = Math.ceil(rows / rowStep);
-
-const total = cols * rows;
-
-const holeCols = centerHole ? (cols % 2 === 0 ? 4 : 5) : 0;
-const holeRows = centerHole ? (rows % 2 === 0 ? 4 : 5) : 0;
-const startCol = (cols - holeCols) / 2;
-const startRow = (rows - holeRows) / 2;
-
-for (let i = 0; i < total; i++) {
-const row = Math.floor(i / cols);
-const col = i % cols;
-const isHole = centerHole &&
-  row >= startRow && row < startRow + holeRows &&
-  col >= startCol && col < startCol + holeCols;
-
-const d = document.createElement('div');
-d.className = 'dot';
-d.style.willChange = 'transform';
-
-if (isHole) {
-  d.style.visibility = 'hidden';
-  d._isHole = true;
-} else {
-  if (svgTemplate) {
-    const svg = svgTemplate.cloneNode(true);
-    svg.style.display = '';
-    svg.setAttribute('aria-hidden', 'true');
-    d.appendChild(svg);
-    d._svg = svg;
-
-    const fillMarked = svg.querySelectorAll('[data-dot-fill]');
-    const withFillAttr = svg.querySelectorAll('[fill]');
-    d._svgFillEls = fillMarked.length ? fillMarked :
-      (withFillAttr.length ? withFillAttr :
-       svg.querySelectorAll('path, rect, circle, polygon, ellipse'));
+  function indexIntoHash(i, x, y) {
+    const k = keyFor(x, y);
+    const arr = hash.get(k) || [];
+    if (!arr.length) hash.set(k, arr);
+    arr.push(i);
   }
-  d._inertiaApplied = false;
-  tintDot(d, colors.base);
-}
 
-container.appendChild(d);
-if (!d._isHole) dots.push(d);
-}
-
-requestAnimationFrame(() => {
-centers = dots.map(el => {
-  const r = el.getBoundingClientRect();
-  const x = r.left + window.scrollX + r.width / 2;
-  const y = r.top  + window.scrollY + r.height / 2;
-  return { el, x, y };
-});
-centers.forEach((c, i) => indexIntoHash(i, c.x, c.y));
-});
-}
-
-window.addEventListener('resize', buildGrid, { passive: true });
-buildGrid();
-
-let lastTime = 0, lastX = 0, lastY = 0;
-
-window.addEventListener('mousemove', (e) => {
-const now = performance.now();
-const dt  = now - lastTime || 16;
-let dx = e.pageX - lastX;
-let dy = e.pageY - lastY;
-let vx = dx / dt * 1000;
-let vy = dy / dt * 1000;
-let speed = Math.hypot(vx, vy);
-
-if (speed > maxSpeed) {
-const s = maxSpeed / speed;
-vx *= s; vy *= s; speed = maxSpeed;
-}
-
-lastTime = now; lastX = e.pageX; lastY = e.pageY;
-
-const nearby = getNearbyIndices(e.pageX, e.pageY);
-if (!nearby.length) return;
-
-requestAnimationFrame(() => {
-for (let i = 0; i < nearby.length; i++) {
-  const c = centers[nearby[i]];
-  const el = c.el;
-  const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
-  if (dist > threshold) continue;
-
-  const t = 1 - dist / threshold;
-  const col = gsap.utils.interpolate(colors.base, colors.active, t);
-  tintDot(el, col);
-
-  if (speed > speedThreshold && !el._inertiaApplied) {
-    el._inertiaApplied = true;
-    const pushX = (c.x - e.pageX) + vx * 0.005;
-    const pushY = (c.y - e.pageY) + vy * 0.005;
-    gsap.to(el, {
-      inertia: { x: pushX, y: pushY, resistance: 750 },
-      onComplete() {
-        gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-        el._inertiaApplied = false;
+  function getNearbyIndices(x, y) {
+    const cx = Math.floor(x / cellSize);
+    const cy = Math.floor(y / cellSize);
+    const out = [];
+    for (let oy = -1; oy <= 1; oy++) {
+      for (let ox = -1; ox <= 1; ox++) {
+        const arr = hash.get(`${cx + ox}:${cy + oy}`);
+        if (arr) out.push(...arr);
       }
+    }
+    return out;
+  }
+
+  function tintDot(el, color) {
+    if (el._svg && el._svgFillEls?.length) {
+      el._svgFillEls.forEach(n => n.setAttribute('fill', color));
+    } else {
+      gsap.set(el, { backgroundColor: color });
+    }
+  }
+
+  // Build grid; compute centers/hashing only if interactive
+  function buildGrid(computeCenters = supportsHoverFine) {
+    container.innerHTML = '';
+    dots = [];
+    centers = [];
+    hash.clear();
+
+    const style = getComputedStyle(container);
+    const dotPx = parseFloat(style.fontSize);
+    const gapPx = dotPx * 2;
+    const contW = container.clientWidth;
+    const contH = container.clientHeight;
+
+    let cols  = Math.floor((contW + gapPx) / (dotPx + gapPx));
+    let rows  = Math.floor((contH + gapPx) / (dotPx + gapPx));
+
+    const colStep = Math.max(1, Math.ceil(cols / maxCols));
+    const rowStep = Math.max(1, Math.ceil(rows / maxRows));
+    cols = Math.ceil(cols / colStep);
+    rows = Math.ceil(rows / rowStep);
+
+    const total = cols * rows;
+
+    const holeCols = centerHole ? (cols % 2 === 0 ? 4 : 5) : 0;
+    const holeRows = centerHole ? (rows % 2 === 0 ? 4 : 5) : 0;
+    const startCol = (cols - holeCols) / 2;
+    const startRow = (rows - holeRows) / 2;
+
+    for (let i = 0; i < total; i++) {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const isHole =
+        centerHole &&
+        row >= startRow && row < startRow + holeRows &&
+        col >= startCol && col < startCol + holeCols;
+
+      const d = document.createElement('div');
+      d.className = 'dot';
+      d.style.willChange = 'transform';
+
+      if (isHole) {
+        d.style.visibility = 'hidden';
+        d._isHole = true;
+      } else {
+        if (svgTemplate) {
+          const svg = svgTemplate.cloneNode(true);
+          svg.style.display = '';
+          svg.setAttribute('aria-hidden', 'true');
+          d.appendChild(svg);
+          d._svg = svg;
+
+          const fillMarked = svg.querySelectorAll('[data-dot-fill]');
+          const withFillAttr = svg.querySelectorAll('[fill]');
+          d._svgFillEls = fillMarked.length
+            ? fillMarked
+            : (withFillAttr.length ? withFillAttr : svg.querySelectorAll('path, rect, circle, polygon, ellipse'));
+        }
+        d._inertiaApplied = false;
+        tintDot(d, colors.base);
+      }
+
+      container.appendChild(d);
+      if (!d._isHole) dots.push(d);
+    }
+
+    // Only do expensive measurements/indexing if interactivity is enabled
+    if (!computeCenters) return;
+
+    requestAnimationFrame(() => {
+      centers = dots.map(el => {
+        const r = el.getBoundingClientRect();
+        const x = r.left + window.scrollX + r.width / 2;
+        const y = r.top  + window.scrollY + r.height / 2;
+        return { el, x, y };
+      });
+      centers.forEach((c, i) => indexIntoHash(i, c.x, c.y));
     });
   }
-}
-});
-}, { passive: true });
 
-window.addEventListener('click', (e) => {
-const nearby = getNearbyIndices(e.pageX, e.pageY);
-if (!nearby.length) return;
+  window.addEventListener('resize', () => buildGrid(supportsHoverFine), { passive: true });
+  buildGrid(supportsHoverFine);
 
-for (let i = 0; i < nearby.length; i++) {
-const c = centers[nearby[i]];
-const el = c.el;
-const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
-if (dist >= shockRadius || el._inertiaApplied) continue;
+  // If no hover, we stop here: static, nice-looking dots, no JS interactivity.
+  if (!supportsHoverFine) return;
 
-el._inertiaApplied = true;
-const falloff = 1 - dist / shockRadius;
-const pushX   = (c.x - e.pageX) * shockPower * falloff;
-const pushY   = (c.y - e.pageY) * shockPower * falloff;
+  // From here down, we’re interactive-only. Require InertiaPlugin.
+  if (typeof InertiaPlugin === 'undefined') return;
 
-gsap.to(el, {
-  inertia: { x: pushX, y: pushY, resistance: 750 },
-  onComplete() {
-    gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-    el._inertiaApplied = false;
-  }
-});
-}
-}, { passive: true });
+  let lastTime = 0, lastX = 0, lastY = 0;
+
+  window.addEventListener('mousemove', (e) => {
+    const now = performance.now();
+    const dt  = now - lastTime || 16;
+    let dx = e.pageX - lastX;
+    let dy = e.pageY - lastY;
+    let vx = dx / dt * 1000;
+    let vy = dy / dt * 1000;
+    let speed = Math.hypot(vx, vy);
+
+    if (speed > maxSpeed) {
+      const s = maxSpeed / speed;
+      vx *= s; vy *= s; speed = maxSpeed;
+    }
+
+    lastTime = now; lastX = e.pageX; lastY = e.pageY;
+
+    const nearby = getNearbyIndices(e.pageX, e.pageY);
+    if (!nearby.length) return;
+
+    requestAnimationFrame(() => {
+      for (let i = 0; i < nearby.length; i++) {
+        const c = centers[nearby[i]];
+        const el = c.el;
+        const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
+        if (dist > threshold) continue;
+
+        const t = 1 - dist / threshold;
+        const col = gsap.utils.interpolate(colors.base, colors.active, t);
+        tintDot(el, col);
+
+        if (speed > speedThreshold && !el._inertiaApplied) {
+          el._inertiaApplied = true;
+          const pushX = (c.x - e.pageX) + vx * 0.005;
+          const pushY = (c.y - e.pageY) + vy * 0.005;
+          gsap.to(el, {
+            inertia: { x: pushX, y: pushY, resistance: 750 },
+            onComplete() {
+              gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
+              el._inertiaApplied = false;
+            }
+          });
+        }
+      }
+    });
+  }, { passive: true });
+
+  window.addEventListener('click', (e) => {
+    const nearby = getNearbyIndices(e.pageX, e.pageY);
+    if (!nearby.length) return;
+
+    for (let i = 0; i < nearby.length; i++) {
+      const c = centers[nearby[i]];
+      const el = c.el;
+      const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
+      if (dist >= shockRadius || el._inertiaApplied) continue;
+
+      el._inertiaApplied = true;
+      const falloff = 1 - dist / shockRadius;
+      const pushX   = (c.x - e.pageX) * shockPower * falloff;
+      const pushY   = (c.y - e.pageY) * shockPower * falloff;
+
+      gsap.to(el, {
+        inertia: { x: pushX, y: pushY, resistance: 750 },
+        onComplete() {
+          gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
+          el._inertiaApplied = false;
+        }
+      });
+    }
+  }, { passive: true });
 });
 }
 
@@ -710,16 +724,16 @@ fsBtn.style.display = 'none';
 }
 fsBtn.addEventListener('click', () => {
 if (isFS()) {
-  lightbox.setAttribute('data-vimeo-fullscreen', 'false');
-  (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+lightbox.setAttribute('data-vimeo-fullscreen', 'false');
+(document.exitFullscreen || document.webkitExitFullscreen).call(document);
 } else if (playerContainer) {
-  lightbox.setAttribute('data-vimeo-fullscreen', 'true');
-  (playerContainer.requestFullscreen || playerContainer.webkitRequestFullscreen).call(playerContainer);
+lightbox.setAttribute('data-vimeo-fullscreen', 'true');
+(playerContainer.requestFullscreen || playerContainer.webkitRequestFullscreen).call(playerContainer);
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
 document.addEventListener(evt, () =>
-  lightbox.setAttribute('data-vimeo-fullscreen', isFS() ? 'true' : 'false')
+lightbox.setAttribute('data-vimeo-fullscreen', isFS() ? 'true' : 'false')
 )
 );
 }
@@ -807,20 +821,20 @@ if (!player) return;
 if (isTouch) {
 if (!playedOnce.has(currentVideoID)) {
 player.setVolume(0).then(() => {
-  lightbox.setAttribute('data-vimeo-playing', 'true');
-  player.play();
-  if (!globalMuted) {
-    setTimeout(() => {
-      player.setVolume(1);
-      lightbox.setAttribute('data-vimeo-muted', 'false');
-    }, 100);
-  }
-  playedOnce.add(currentVideoID);
+lightbox.setAttribute('data-vimeo-playing', 'true');
+player.play();
+if (!globalMuted) {
+  setTimeout(() => {
+    player.setVolume(1);
+    lightbox.setAttribute('data-vimeo-muted', 'false');
+  }, 100);
+}
+playedOnce.add(currentVideoID);
 });
 } else {
 player.setVolume(globalMuted ? 0 : 1).then(() => {
-  lightbox.setAttribute('data-vimeo-playing', 'true');
-  player.play();
+lightbox.setAttribute('data-vimeo-playing', 'true');
+player.play();
 });
 }
 } else {
@@ -860,36 +874,36 @@ const SIX_EM = 6 * parseFloat(getComputedStyle(document.documentElement).fontSiz
 document.addEventListener('click', onClick, { passive: false });
 
 function onClick(e) {
-  const btn = e.target.closest('[data-button-offset]');
-  if (!btn) return;
+const btn = e.target.closest('[data-button-offset]');
+if (!btn) return;
 
-  const href = btn.getAttribute('href') || '';
-  const id = href.includes('#') ? href.split('#')[1] : '';
-  if (!id) return;
+const href = btn.getAttribute('href') || '';
+const id = href.includes('#') ? href.split('#')[1] : '';
+if (!id) return;
 
-  const target = document.getElementById(id) || document.getElementsByName(id)[0];
-  if (!target) return;
+const target = document.getElementById(id) || document.getElementsByName(id)[0];
+if (!target) return;
 
-  e.preventDefault();
+e.preventDefault();
 
-  // Compute absolute Y, add fixed 6em
-  const rect = target.getBoundingClientRect();
-  let y = window.scrollY + rect.top + SIX_EM;
+// Compute absolute Y, add fixed 6em
+const rect = target.getBoundingClientRect();
+let y = window.scrollY + rect.top + SIX_EM;
 
-  // Clamp within page bounds
-  const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-  if (y > max) y = max;
-  if (y < 0) y = 0;
+// Clamp within page bounds
+const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+if (y > max) y = max;
+if (y < 0) y = 0;
 
-  // Use Lenis if present; fallback to native
-  if (window.lenis && typeof window.lenis.scrollTo === 'function') {
-    window.lenis.scrollTo(y);
-  } else {
-    window.scrollTo({ top: y, behavior: 'smooth' });
-  }
+// Use Lenis if present; fallback to native
+if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+  window.lenis.scrollTo(y);
+} else {
+  window.scrollTo({ top: y, behavior: 'smooth' });
+}
 
-  // Update hash without native jump
-  if (target.id) history.pushState(null, '', `#${encodeURIComponent(target.id)}`);
+// Update hash without native jump
+if (target.id) history.pushState(null, '', `#${encodeURIComponent(target.id)}`);
 }
 }
 
@@ -975,12 +989,12 @@ let idx = Math.floor(p * steps + 1e-6);
 idx = Math.max(0, Math.min(steps, idx));
 
 if (progressBar) {
-  gsap.to(progressBar, { scaleX: p, ease: 'none' });
+gsap.to(progressBar, { scaleX: p, ease: 'none' });
 }
 
 if (idx !== currentIndex) {
-  transition(currentIndex, idx);
-  currentIndex = idx;
+transition(currentIndex, idx);
+currentIndex = idx;
 }
 }
 });
@@ -1066,12 +1080,12 @@ if (el._ft) clearTimeout(el._ft);
 const next = itemMatches(el);
 const cur = el.getAttribute('data-filter-status');
 if (cur === 'active' && transitionDelay > 0) {
-  el.setAttribute('data-filter-status', 'transition-out');
-  el._ft = setTimeout(() => { setItemState(el, next); el._ft = null; }, transitionDelay);
+el.setAttribute('data-filter-status', 'transition-out');
+el._ft = setTimeout(() => { setItemState(el, next); el._ft = null; }, transitionDelay);
 } else if (transitionDelay > 0) {
-  el._ft = setTimeout(() => { setItemState(el, next); el._ft = null; }, transitionDelay);
+el._ft = setTimeout(() => { setItemState(el, next); el._ft = null; }, transitionDelay);
 } else {
-  setItemState(el, next);
+setItemState(el, next);
 }
 });
 
