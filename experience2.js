@@ -151,10 +151,10 @@ target,
 [prop]: endVal,
 ease: 'none',
 scrollTrigger: {
-  trigger,
-  start: `clamp(${scrollStartRaw})`,
-  end:   `clamp(${scrollEndRaw})`,
-  scrub,
+trigger,
+start: `clamp(${scrollStartRaw})`,
+end:   `clamp(${scrollEndRaw})`,
+scrub,
 },
 }
 );
@@ -434,7 +434,7 @@ if (typeof gsap === 'undefined') return;
 
 // Only allow on devices with hover + fine pointer (mouse/trackpad)
 const supportsHoverFine = !!(window.matchMedia &&
-                 window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+               window.matchMedia('(hover: hover) and (pointer: fine)').matches);
 
 // If not supported, hard-hide the containers and bail
 if (!supportsHoverFine) {
@@ -622,8 +622,8 @@ const pushY = (c.y - e.pageY) + vy * 0.005;
 gsap.to(el, {
 inertia: { x: pushX, y: pushY, resistance: 750 },
 onComplete() {
-  gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-  el._inertiaApplied = false;
+gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
+el._inertiaApplied = false;
 }
 });
 }
@@ -785,10 +785,10 @@ lightbox.setAttribute('data-vimeo-fullscreen', 'true');
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-                                              document.addEventListener(evt, () =>
-                                                                        lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
-                                                                       )
-                                             );
+                                            document.addEventListener(evt, () =>
+                                                                      lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
+                                                                     )
+                                           );
 }
 }
 
@@ -906,8 +906,8 @@ muteBtn?.addEventListener('click', () => {
 if (!player) return;
 globalMuted = !globalMuted;
 player.setVolume(globalMuted ? 0 : 1).then(() =>
-                                 lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
-                                );
+                               lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
+                              );
 });
 
 openButtons.forEach(btn => {
@@ -1267,32 +1267,32 @@ const slotTime = slotIndex * groupStaggerSec;
 
 if (slot.type === 'item') {
 tl.to(slot.el, {
+y: 0,
+autoAlpha: 1,
+duration: animDuration,
+ease: animEase,
+onComplete: () => gsap.set(slot.el, { clearProps: 'all' })
+}, slotTime);
+} else {
+if (slot.includeParent) {
+tl.to(slot.parentEl, {
   y: 0,
   autoAlpha: 1,
   duration: animDuration,
   ease: animEase,
-  onComplete: () => gsap.set(slot.el, { clearProps: 'all' })
+  onComplete: () => gsap.set(slot.parentEl, { clearProps: 'all' })
 }, slotTime);
-} else {
-if (slot.includeParent) {
-  tl.to(slot.parentEl, {
-    y: 0,
-    autoAlpha: 1,
-    duration: animDuration,
-    ease: animEase,
-    onComplete: () => gsap.set(slot.parentEl, { clearProps: 'all' })
-  }, slotTime);
 }
 const nestedMs = parseFloat(slot.nestedEl.getAttribute('data-stagger'));
 const nestedStaggerSec = isNaN(nestedMs) ? groupStaggerSec : nestedMs / 1000;
 Array.from(slot.nestedEl.children).forEach((nestedChild, nestedIndex) => {
-  tl.to(nestedChild, {
-    y: 0,
-    autoAlpha: 1,
-    duration: animDuration,
-    ease: animEase,
-    onComplete: () => gsap.set(nestedChild, { clearProps: 'all' })
-  }, slotTime + nestedIndex * nestedStaggerSec);
+tl.to(nestedChild, {
+  y: 0,
+  autoAlpha: 1,
+  duration: animDuration,
+  ease: animEase,
+  onComplete: () => gsap.set(nestedChild, { clearProps: 'all' })
+}, slotTime + nestedIndex * nestedStaggerSec);
 });
 }
 });
@@ -1371,8 +1371,8 @@ window.addEventListener('resize', onResize);
 const imgLoad = () => {
 const imgs = container.querySelectorAll('img');
 return Promise.all(Array.from(imgs).map(img =>
-                                (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
-                               ));
+                              (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
+                             ));
 };
 
 // When images are ready, set the layout
@@ -1816,11 +1816,11 @@ switchTab(0);
 
 // switch tabs on click
 contentItems.forEach((item, i) =>
-           item.addEventListener("click", () => {
+         item.addEventListener("click", () => {
 if (item === activeContent) return;
 switchTab(i);
 })
-          );
+        );
 });
 }
 
@@ -2016,5 +2016,6 @@ document.querySelectorAll(selector).forEach(root => {
   });
 });
 }
+
 
 
