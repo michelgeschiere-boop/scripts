@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Inits (order matters a bit because some refresh ScrollTrigger) ──────────
   initHighlightText();
   initGlobalParallax();
-  initParallaxImages();
   initStackingCardsParallax();
   initStackedCardsSlider();
   initGlowingInteractiveDotsGrid();
