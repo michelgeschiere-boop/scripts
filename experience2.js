@@ -56,14 +56,6 @@ initCustomSubmitButton();
 initMobileNavMenu();
 initThemedSVGCursor();
 
-initSceneSwap('#experience[data-scene-root]', {
-start: 'top 60%',   // when a paragraph’s top hits 60% down the viewport
-end:   'bottom 60%',
-scaleActive: 1.06,
-fadedAlpha: 0.4,
-imgFadeDur: 0.6
-});
-
 // One refresh after all ScrollTriggers are created
 if (typeof ScrollTrigger !== 'undefined') {
 // Batch with rAF to ensure layout is settled
@@ -93,10 +85,10 @@ onSplit(self) {
 const ctx = gsap.context(() => {
 gsap.timeline({
 scrollTrigger: {
-  scrub: true,
-  trigger: heading,
-  start: scrollStart,
-  end: scrollEnd,
+scrub: true,
+trigger: heading,
+start: scrollStart,
+end: scrollEnd,
 }
 }).from(self.chars, {
 autoAlpha: fadedValue,
@@ -156,14 +148,14 @@ gsap.fromTo(
 target,
 { [prop]: startVal },
 {
-  [prop]: endVal,
-  ease: 'none',
-  scrollTrigger: {
-    trigger,
-    start: `clamp(${scrollStartRaw})`,
-    end:   `clamp(${scrollEndRaw})`,
-    scrub,
-  },
+[prop]: endVal,
+ease: 'none',
+scrollTrigger: {
+  trigger,
+  start: `clamp(${scrollStartRaw})`,
+  end:   `clamp(${scrollEndRaw})`,
+  scrub,
+},
 }
 );
 });
@@ -442,7 +434,7 @@ if (typeof gsap === 'undefined') return;
 
 // Only allow on devices with hover + fine pointer (mouse/trackpad)
 const supportsHoverFine = !!(window.matchMedia &&
-                   window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+                 window.matchMedia('(hover: hover) and (pointer: fine)').matches);
 
 // If not supported, hard-hide the containers and bail
 if (!supportsHoverFine) {
@@ -535,9 +527,9 @@ for (let i = 0; i < total; i++) {
 const row = Math.floor(i / cols);
 const col = i % cols;
 const isHole =
-  centerHole &&
-  row >= startRow && row < startRow + holeRows &&
-  col >= startCol && col < startCol + holeCols;
+centerHole &&
+row >= startRow && row < startRow + holeRows &&
+col >= startCol && col < startCol + holeCols;
 
 const d = document.createElement('div');
 d.className = 'dot';
@@ -557,7 +549,7 @@ d._svg = svg;
 const fillMarked = svg.querySelectorAll('[data-dot-fill]');
 const withFillAttr = svg.querySelectorAll('[fill]');
 d._svgFillEls = fillMarked.length
-  ? fillMarked
+? fillMarked
 : (withFillAttr.length ? withFillAttr : svg.querySelectorAll('path, rect, circle, polygon, ellipse'));
 }
 d._inertiaApplied = false;
@@ -628,11 +620,11 @@ el._inertiaApplied = true;
 const pushX = (c.x - e.pageX) + vx * 0.005;
 const pushY = (c.y - e.pageY) + vy * 0.005;
 gsap.to(el, {
-  inertia: { x: pushX, y: pushY, resistance: 750 },
-  onComplete() {
-    gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-    el._inertiaApplied = false;
-  }
+inertia: { x: pushX, y: pushY, resistance: 750 },
+onComplete() {
+  gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
+  el._inertiaApplied = false;
+}
 });
 }
 }
@@ -793,10 +785,10 @@ lightbox.setAttribute('data-vimeo-fullscreen', 'true');
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-                                                document.addEventListener(evt, () =>
-                                                                          lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
-                                                                         )
-                                               );
+                                              document.addEventListener(evt, () =>
+                                                                        lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
+                                                                       )
+                                             );
 }
 }
 
@@ -888,8 +880,8 @@ lightbox.setAttribute('data-vimeo-playing', 'true');
 player.play();
 if (!globalMuted) {
 setTimeout(() => {
-  player.setVolume(1);
-  lightbox.setAttribute('data-vimeo-muted', 'false');
+player.setVolume(1);
+lightbox.setAttribute('data-vimeo-muted', 'false');
 }, 100);
 }
 playedOnce.add(currentVideoID);
@@ -914,8 +906,8 @@ muteBtn?.addEventListener('click', () => {
 if (!player) return;
 globalMuted = !globalMuted;
 player.setVolume(globalMuted ? 0 : 1).then(() =>
-                                   lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
-                                  );
+                                 lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
+                                );
 });
 
 openButtons.forEach(btn => {
@@ -1274,34 +1266,34 @@ slots.forEach((slot, slotIndex) => {
 const slotTime = slotIndex * groupStaggerSec;
 
 if (slot.type === 'item') {
-  tl.to(slot.el, {
+tl.to(slot.el, {
+  y: 0,
+  autoAlpha: 1,
+  duration: animDuration,
+  ease: animEase,
+  onComplete: () => gsap.set(slot.el, { clearProps: 'all' })
+}, slotTime);
+} else {
+if (slot.includeParent) {
+  tl.to(slot.parentEl, {
     y: 0,
     autoAlpha: 1,
     duration: animDuration,
     ease: animEase,
-    onComplete: () => gsap.set(slot.el, { clearProps: 'all' })
+    onComplete: () => gsap.set(slot.parentEl, { clearProps: 'all' })
   }, slotTime);
-} else {
-  if (slot.includeParent) {
-    tl.to(slot.parentEl, {
-      y: 0,
-      autoAlpha: 1,
-      duration: animDuration,
-      ease: animEase,
-      onComplete: () => gsap.set(slot.parentEl, { clearProps: 'all' })
-    }, slotTime);
-  }
-  const nestedMs = parseFloat(slot.nestedEl.getAttribute('data-stagger'));
-  const nestedStaggerSec = isNaN(nestedMs) ? groupStaggerSec : nestedMs / 1000;
-  Array.from(slot.nestedEl.children).forEach((nestedChild, nestedIndex) => {
-    tl.to(nestedChild, {
-      y: 0,
-      autoAlpha: 1,
-      duration: animDuration,
-      ease: animEase,
-      onComplete: () => gsap.set(nestedChild, { clearProps: 'all' })
-    }, slotTime + nestedIndex * nestedStaggerSec);
-  });
+}
+const nestedMs = parseFloat(slot.nestedEl.getAttribute('data-stagger'));
+const nestedStaggerSec = isNaN(nestedMs) ? groupStaggerSec : nestedMs / 1000;
+Array.from(slot.nestedEl.children).forEach((nestedChild, nestedIndex) => {
+  tl.to(nestedChild, {
+    y: 0,
+    autoAlpha: 1,
+    duration: animDuration,
+    ease: animEase,
+    onComplete: () => gsap.set(nestedChild, { clearProps: 'all' })
+  }, slotTime + nestedIndex * nestedStaggerSec);
+});
 }
 });
 }
@@ -1379,8 +1371,8 @@ window.addEventListener('resize', onResize);
 const imgLoad = () => {
 const imgs = container.querySelectorAll('img');
 return Promise.all(Array.from(imgs).map(img =>
-                                  (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
-                                 ));
+                                (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
+                               ));
 };
 
 // When images are ready, set the layout
@@ -1594,16 +1586,16 @@ times[i] = timeWrap(tl.labels["label" + i] + tl.duration() * widths[i] / 2 / tot
 },
 getClosest = (values, value, wrap) => {
 let i = values.length,
-  closest = 1e10,
-  index = 0, d;
+closest = 1e10,
+index = 0, d;
 while (i--) {
 d = Math.abs(values[i] - value);
 if (d > wrap / 2) {
-  d = wrap - d;
+d = wrap - d;
 }
 if (d < closest) {
-  closest = d;
-  index = i;
+closest = d;
+index = i;
 }
 }
 return index;
@@ -1617,8 +1609,8 @@ curX = xPercents[i] / 100 * widths[i];
 distanceToStart = item.offsetLeft + curX - startX + spaceBefore[0];
 distanceToLoop = distanceToStart + widths[i] * gsap.getProperty(item, "scaleX");
 tl.to(item, {xPercent: snap((curX - distanceToLoop) / widths[i] * 100), duration: distanceToLoop / pixelsPerSecond}, 0)
-  .fromTo(item, {xPercent: snap((curX - distanceToLoop + totalWidth) / widths[i] * 100)}, {xPercent: xPercents[i], duration: (curX - distanceToLoop + totalWidth - curX) / pixelsPerSecond, immediateRender: false}, distanceToLoop / pixelsPerSecond)
-  .add("label" + i, distanceToStart / pixelsPerSecond);
+.fromTo(item, {xPercent: snap((curX - distanceToLoop + totalWidth) / widths[i] * 100)}, {xPercent: xPercents[i], duration: (curX - distanceToLoop + totalWidth - curX) / pixelsPerSecond, immediateRender: false}, distanceToLoop / pixelsPerSecond)
+.add("label" + i, distanceToStart / pixelsPerSecond);
 times[i] = distanceToStart / pixelsPerSecond;
 }
 timeWrap = gsap.utils.wrap(0, tl.duration());
@@ -1702,9 +1694,9 @@ if (Math.abs(startProgress / -ratio - this.x) < 10) {
 return lastSnap + initChangeX
 }
 let time = -(value * ratio) * tl.duration(),
-  wrappedTime = timeWrap(time),
-  snapTime = times[getClosest(times, wrappedTime, tl.duration())],
-  dif = snapTime - wrappedTime;
+wrappedTime = timeWrap(time),
+snapTime = times[getClosest(times, wrappedTime, tl.duration())],
+dif = snapTime - wrappedTime;
 Math.abs(dif) > tl.duration() / 2 && (dif += dif < 0 ? tl.duration() : -tl.duration());
 lastSnap = (time + dif) / tl.duration() / -ratio;
 return lastSnap;
@@ -1824,11 +1816,11 @@ switchTab(0);
 
 // switch tabs on click
 contentItems.forEach((item, i) =>
-             item.addEventListener("click", () => {
+           item.addEventListener("click", () => {
 if (item === activeContent) return;
 switchTab(i);
 })
-            );
+          );
 });
 }
 
@@ -1976,119 +1968,53 @@ if (!isMobile()) setState(false);
 });
 }
 
-function initSceneSwap(selector='[data-scene-root]', opts = {}) {
-const {
-  scaleActive = 1.2,
-  fadedAlpha  = 0.4,
-  imgFadeDur  = 0.6,
-  start       = 'top 75%',
-  end         = 'bottom 50%'
-} = opts;
+// Call this after DOMContentLoaded:
+initExperienceScenes('#experience[data-scene-root]');
 
-const hasGSAP      = typeof gsap !== 'undefined';
-const hasST        = typeof ScrollTrigger !== 'undefined';
-const hasSplitText = typeof SplitText !== 'undefined';
+function initExperienceScenes(selector = '[data-scene-root]') {
+if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
 
 document.querySelectorAll(selector).forEach(root => {
-  const images = Array.from(root.querySelectorAll('[data-scene-image]'));
-  const texts  = Array.from(root.querySelectorAll('[data-scene-text]'));
-  if (!images.length || !texts.length) return;
+  const imgs  = gsap.utils.toArray(root.querySelectorAll('[data-scene-image]'));
+  const texts = gsap.utils.toArray(root.querySelectorAll('[data-scene-text]'));
+  const n = Math.min(imgs.length, texts.length);
+  if (!n) return;
 
-  // stack the images
-  images.forEach(img => {
+  // Stack images (fill the stage). First one visible.
+  imgs.forEach((img, i) => {
     img.style.position = 'absolute';
     img.style.inset = '0';
-    if (!img.hasAttribute('loading')) img.setAttribute('loading','lazy');
+    if (!img.hasAttribute('loading')) img.setAttribute('loading', 'lazy');
+    gsap.set(img, { autoAlpha: i === 0 ? 1 : 0 });
   });
 
-  // optional SplitText
-  const splitMap = new Map();
-  if (hasGSAP && hasSplitText) {
-    texts.forEach(el => {
-      if (el.__splitApplied) return;
-      new SplitText(el, {
-        type: 'words, chars',
-        autoSplit: true,
-        onSplit(self){ splitMap.set(el, { chars: self.chars, faded: fadedAlpha }); }
-      });
-      el.__splitApplied = true;
+  const setScene = (i) => {
+    imgs.forEach((img, idx) => {
+      gsap.to(img, { autoAlpha: idx === i ? 1 : 0, duration: 0.35, overwrite: 'auto', ease: 'power1.out' });
     });
-  }
+    texts.forEach((t, idx) => t.classList.toggle('is-active', idx === i));
+  };
 
-  function setActive(el, on){
-    if (!el) return;
-    if (on) el.setAttribute('data-scene-active','true');
-    else    el.removeAttribute('data-scene-active');
-    el.setAttribute('aria-current', on ? 'true' : 'false');
-  }
+  // Initial state
+  setScene(0);
 
-  function setHighlight(el, on){
-    const rec = splitMap.get(el);
-    if (hasGSAP && rec && rec.chars) {
-      gsap.to(rec.chars, {
-        autoAlpha: on ? 1 : rec.faded,
-        duration: .35,
-        overwrite: 'auto',
-        ease: 'power1.out'
-      });
+  // Pin the section and step every 100vh
+  ScrollTrigger.create({
+    trigger: root,
+    start: 'top top',
+    end: () => '+=' + (Math.max(0, n - 1) * window.innerHeight),
+    pin: true,
+    scrub: true,
+    snap: n > 1 ? 1 / (n - 1) : 1, // snap to each 100vh step
+    onUpdate(self) {
+      const i = Math.round(self.progress * (n - 1));
+      if (i !== root.__sceneIndex) {
+        root.__sceneIndex = i;
+        setScene(i);
+      }
     }
-  }
-
-  function swapTo(id){
-    const idStr = String(id);
-
-    // images
-    images.forEach(img => {
-      const active = img.getAttribute('data-scene-image') === idStr;
-      setActive(img, active);
-      if (hasGSAP) {
-        gsap.to(img, {
-          autoAlpha: active ? 1 : 0,
-          duration: imgFadeDur,
-          ease: 'power2.inOut',
-          overwrite: 'auto'
-        });
-      }
-    });
-
-    // texts
-    texts.forEach(t => {
-      const active = t.getAttribute('data-scene-text') === idStr;
-      setActive(t, active);
-      setHighlight(t, active);
-      if (hasGSAP && !splitMap.has(t)) {
-        gsap.to(t, {
-          opacity: active ? 1 : 0.55,
-          scale:   active ? scaleActive : 1,
-          duration: .35,
-          ease: 'power1.out',
-          overwrite: 'auto'
-        });
-      }
-    });
-  } // <-- close swapTo
-
-  // prime initial state
-  const allIds = [...new Set([
-    ...images.map(i => i.getAttribute('data-scene-image')),
-    ...texts.map(t => t.getAttribute('data-scene-text'))
-  ])].sort((a,b) => Number(a)-Number(b));
-  swapTo(allIds[0] || '1');
-
-  // scroll binding
-  if (hasGSAP && hasST) {
-    texts.forEach(t => {
-      const id = t.getAttribute('data-scene-text');
-      ScrollTrigger.create({
-        trigger: t,
-        start,
-        end,
-        onEnter:     () => swapTo(id),
-        onEnterBack: () => swapTo(id)
-      });
-    });
-  }
-}); 
-} 
+  });
+});
+}
 
 
