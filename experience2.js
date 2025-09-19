@@ -92,16 +92,16 @@ autoSplit: true,
 onSplit(self) {
 const ctx = gsap.context(() => {
 gsap.timeline({
-  scrollTrigger: {
-    scrub: true,
-    trigger: heading,
-    start: scrollStart,
-    end: scrollEnd,
-  }
+scrollTrigger: {
+  scrub: true,
+  trigger: heading,
+  start: scrollStart,
+  end: scrollEnd,
+}
 }).from(self.chars, {
-  autoAlpha: fadedValue,
-  stagger: staggerValue,
-  ease: 'linear'
+autoAlpha: fadedValue,
+stagger: staggerValue,
+ease: 'linear'
 });
 });
 return ctx;
@@ -131,9 +131,9 @@ const ctx = gsap.context(() => {
 document.querySelectorAll('[data-parallax="trigger"]').forEach((trigger) => {
 const disable = trigger.getAttribute('data-parallax-disable');
 if (
-  (disable === 'mobile' && isMobile) ||
-  (disable === 'mobileLandscape' && isMobileLandscape) ||
-  (disable === 'tablet' && isTablet)
+(disable === 'mobile' && isMobile) ||
+(disable === 'mobileLandscape' && isMobileLandscape) ||
+(disable === 'tablet' && isTablet)
 ) return;
 
 const target = trigger.querySelector('[data-parallax="target"]') || trigger;
@@ -153,18 +153,18 @@ const scrollStartRaw = trigger.getAttribute('data-parallax-scroll-start') || 'to
 const scrollEndRaw   = trigger.getAttribute('data-parallax-scroll-end')   || 'bottom top';
 
 gsap.fromTo(
-  target,
-  { [prop]: startVal },
-  {
-    [prop]: endVal,
-    ease: 'none',
-    scrollTrigger: {
-      trigger,
-      start: `clamp(${scrollStartRaw})`,
-      end:   `clamp(${scrollEndRaw})`,
-      scrub,
-    },
-  }
+target,
+{ [prop]: startVal },
+{
+  [prop]: endVal,
+  ease: 'none',
+  scrollTrigger: {
+    trigger,
+    start: `clamp(${scrollStartRaw})`,
+    end:   `clamp(${scrollEndRaw})`,
+    scrub,
+  },
+}
 );
 });
 });
@@ -343,8 +343,8 @@ onRelease() { firstEl.classList.remove('is--dragging'); },
 onDrag() {
 let raw = this.x;
 if (Math.abs(raw) > full) {
-  const over = Math.abs(raw) - full;
-  raw = (raw > 0 ? 1 : -1) * (full + over * 0.1);
+const over = Math.abs(raw) - full;
+raw = (raw > 0 ? 1 : -1) * (full + over * 0.1);
 }
 gsap.set(firstEl, { x: raw, rotation: 0 });
 },
@@ -358,11 +358,11 @@ firstItem.style.pointerEvents = 'none';
 secondItem.style.pointerEvents = 'auto';
 
 if (Math.abs(x) <= t) {
-  gsap.to(firstEl, { x: 0, rotation: 0, ...easeBeforeRelease, onComplete: resetCycle });
+gsap.to(firstEl, { x: 0, rotation: 0, ...easeBeforeRelease, onComplete: resetCycle });
 } else if (Math.abs(x) <= full) {
-  flick(dir, false, x);
+flick(dir, false, x);
 } else {
-  flick(dir, true);
+flick(dir, true);
 }
 }
 })[0];
@@ -374,8 +374,8 @@ onRelease() { secondEl.classList.remove('is--dragging'); },
 onDrag() {
 let raw = this.x;
 if (Math.abs(raw) > full) {
-  const over = Math.abs(raw) - full;
-  raw = (raw > 0 ? 1 : -1) * (full + over * 0.2);
+const over = Math.abs(raw) - full;
+raw = (raw > 0 ? 1 : -1) * (full + over * 0.2);
 }
 gsap.set(secondEl, { x: raw, rotation: 0 });
 },
@@ -409,12 +409,12 @@ gsap.fromTo(card, { x: visualX, rotation: 0 }, { x: 0, rotation: 0, ...easeAfter
 gsap.fromTo(card, { x: releaseX, rotation: 0 }, {
 x: exitX, ...easeBeforeRelease,
 onComplete() {
-  gsap.set(card, { x: 0, rotation: 0 });
-  list.appendChild(item);
-  [activeDeg, inactiveDeg] = [inactiveDeg, activeDeg];
-  resetCycle();
-  const newCard = item.querySelector('[data-stacked-cards-card]');
-  if (newCard) gsap.fromTo(newCard, { x: exitX }, { x: 0, ...easeAfterRelease, onComplete: resetCycle });
+gsap.set(card, { x: 0, rotation: 0 });
+list.appendChild(item);
+[activeDeg, inactiveDeg] = [inactiveDeg, activeDeg];
+resetCycle();
+const newCard = item.querySelector('[data-stacked-cards-card]');
+if (newCard) gsap.fromTo(newCard, { x: exitX }, { x: 0, ...easeAfterRelease, onComplete: resetCycle });
 }
 });
 }
@@ -442,7 +442,7 @@ if (typeof gsap === 'undefined') return;
 
 // Only allow on devices with hover + fine pointer (mouse/trackpad)
 const supportsHoverFine = !!(window.matchMedia &&
-                     window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+                   window.matchMedia('(hover: hover) and (pointer: fine)').matches);
 
 // If not supported, hard-hide the containers and bail
 if (!supportsHoverFine) {
@@ -535,9 +535,9 @@ for (let i = 0; i < total; i++) {
 const row = Math.floor(i / cols);
 const col = i % cols;
 const isHole =
-    centerHole &&
-    row >= startRow && row < startRow + holeRows &&
-    col >= startCol && col < startCol + holeCols;
+  centerHole &&
+  row >= startRow && row < startRow + holeRows &&
+  col >= startCol && col < startCol + holeCols;
 
 const d = document.createElement('div');
 d.className = 'dot';
@@ -548,17 +548,17 @@ d.style.visibility = 'hidden';
 d._isHole = true;
 } else {
 if (svgTemplate) {
-  const svg = svgTemplate.cloneNode(true);
-  svg.style.display = '';
-  svg.setAttribute('aria-hidden', 'true');
-  d.appendChild(svg);
-  d._svg = svg;
+const svg = svgTemplate.cloneNode(true);
+svg.style.display = '';
+svg.setAttribute('aria-hidden', 'true');
+d.appendChild(svg);
+d._svg = svg;
 
-  const fillMarked = svg.querySelectorAll('[data-dot-fill]');
-  const withFillAttr = svg.querySelectorAll('[fill]');
-  d._svgFillEls = fillMarked.length
-    ? fillMarked
-  : (withFillAttr.length ? withFillAttr : svg.querySelectorAll('path, rect, circle, polygon, ellipse'));
+const fillMarked = svg.querySelectorAll('[data-dot-fill]');
+const withFillAttr = svg.querySelectorAll('[fill]');
+d._svgFillEls = fillMarked.length
+  ? fillMarked
+: (withFillAttr.length ? withFillAttr : svg.querySelectorAll('path, rect, circle, polygon, ellipse'));
 }
 d._inertiaApplied = false;
 tintDot(d, colors.base);
@@ -624,16 +624,16 @@ const col = gsap.utils.interpolate(colors.base, colors.active, t);
 tintDot(el, col);
 
 if (speed > speedThreshold && !el._inertiaApplied) {
-  el._inertiaApplied = true;
-  const pushX = (c.x - e.pageX) + vx * 0.005;
-  const pushY = (c.y - e.pageY) + vy * 0.005;
-  gsap.to(el, {
-    inertia: { x: pushX, y: pushY, resistance: 750 },
-    onComplete() {
-      gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-      el._inertiaApplied = false;
-    }
-  });
+el._inertiaApplied = true;
+const pushX = (c.x - e.pageX) + vx * 0.005;
+const pushY = (c.y - e.pageY) + vy * 0.005;
+gsap.to(el, {
+  inertia: { x: pushX, y: pushY, resistance: 750 },
+  onComplete() {
+    gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
+    el._inertiaApplied = false;
+  }
+});
 }
 }
 });
@@ -657,8 +657,8 @@ const pushY   = (c.y - e.pageY) * shockPower * falloff;
 gsap.to(el, {
 inertia: { x: pushX, y: pushY, resistance: 750 },
 onComplete() {
-  gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-  el._inertiaApplied = false;
+gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
+el._inertiaApplied = false;
 }
 });
 }
@@ -793,10 +793,10 @@ lightbox.setAttribute('data-vimeo-fullscreen', 'true');
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-                                                  document.addEventListener(evt, () =>
-                                                                            lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
-                                                                           )
-                                                 );
+                                                document.addEventListener(evt, () =>
+                                                                          lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
+                                                                         )
+                                               );
 }
 }
 
@@ -887,10 +887,10 @@ player.setVolume(0).then(() => {
 lightbox.setAttribute('data-vimeo-playing', 'true');
 player.play();
 if (!globalMuted) {
-  setTimeout(() => {
-    player.setVolume(1);
-    lightbox.setAttribute('data-vimeo-muted', 'false');
-  }, 100);
+setTimeout(() => {
+  player.setVolume(1);
+  lightbox.setAttribute('data-vimeo-muted', 'false');
+}, 100);
 }
 playedOnce.add(currentVideoID);
 });
@@ -914,8 +914,8 @@ muteBtn?.addEventListener('click', () => {
 if (!player) return;
 globalMuted = !globalMuted;
 player.setVolume(globalMuted ? 0 : 1).then(() =>
-                                     lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
-                                    );
+                                   lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
+                                  );
 });
 
 openButtons.forEach(btn => {
@@ -1217,11 +1217,11 @@ trigger: groupEl,
 start: triggerStart,
 once: true,
 onEnter: () => gsap.to(groupEl, {
-  y: 0,
-  autoAlpha: 1,
-  duration: animDuration,
-  ease: animEase,
-  onComplete: () => gsap.set(groupEl, { clearProps: 'all' })
+y: 0,
+autoAlpha: 1,
+duration: animDuration,
+ease: animEase,
+onComplete: () => gsap.set(groupEl, { clearProps: 'all' })
 })
 });
 return;
@@ -1271,38 +1271,38 @@ onEnter: () => {
 const tl = gsap.timeline();
 
 slots.forEach((slot, slotIndex) => {
-  const slotTime = slotIndex * groupStaggerSec;
+const slotTime = slotIndex * groupStaggerSec;
 
-  if (slot.type === 'item') {
-    tl.to(slot.el, {
+if (slot.type === 'item') {
+  tl.to(slot.el, {
+    y: 0,
+    autoAlpha: 1,
+    duration: animDuration,
+    ease: animEase,
+    onComplete: () => gsap.set(slot.el, { clearProps: 'all' })
+  }, slotTime);
+} else {
+  if (slot.includeParent) {
+    tl.to(slot.parentEl, {
       y: 0,
       autoAlpha: 1,
       duration: animDuration,
       ease: animEase,
-      onComplete: () => gsap.set(slot.el, { clearProps: 'all' })
+      onComplete: () => gsap.set(slot.parentEl, { clearProps: 'all' })
     }, slotTime);
-  } else {
-    if (slot.includeParent) {
-      tl.to(slot.parentEl, {
-        y: 0,
-        autoAlpha: 1,
-        duration: animDuration,
-        ease: animEase,
-        onComplete: () => gsap.set(slot.parentEl, { clearProps: 'all' })
-      }, slotTime);
-    }
-    const nestedMs = parseFloat(slot.nestedEl.getAttribute('data-stagger'));
-    const nestedStaggerSec = isNaN(nestedMs) ? groupStaggerSec : nestedMs / 1000;
-    Array.from(slot.nestedEl.children).forEach((nestedChild, nestedIndex) => {
-      tl.to(nestedChild, {
-        y: 0,
-        autoAlpha: 1,
-        duration: animDuration,
-        ease: animEase,
-        onComplete: () => gsap.set(nestedChild, { clearProps: 'all' })
-      }, slotTime + nestedIndex * nestedStaggerSec);
-    });
   }
+  const nestedMs = parseFloat(slot.nestedEl.getAttribute('data-stagger'));
+  const nestedStaggerSec = isNaN(nestedMs) ? groupStaggerSec : nestedMs / 1000;
+  Array.from(slot.nestedEl.children).forEach((nestedChild, nestedIndex) => {
+    tl.to(nestedChild, {
+      y: 0,
+      autoAlpha: 1,
+      duration: animDuration,
+      ease: animEase,
+      onComplete: () => gsap.set(nestedChild, { clearProps: 'all' })
+    }, slotTime + nestedIndex * nestedStaggerSec);
+  });
+}
 });
 }
 });
@@ -1379,8 +1379,8 @@ window.addEventListener('resize', onResize);
 const imgLoad = () => {
 const imgs = container.querySelectorAll('img');
 return Promise.all(Array.from(imgs).map(img =>
-                                    (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
-                                   ));
+                                  (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
+                                 ));
 };
 
 // When images are ready, set the layout
@@ -1394,9 +1394,9 @@ window.removeEventListener('resize', onResize);
 const items = Array.from(container.children);
 items.forEach(el => {
 el.style.position =
-  el.style.width =
-  el.style.top =
-  el.style.left = '';
+el.style.width =
+el.style.top =
+el.style.left = '';
 });
 container.style.position =
 container.style.height = '';
@@ -1453,11 +1453,11 @@ activeElement = element;
 if (bullets && bullets.length > 0) {
 if (activeBullet) activeBullet.classList.remove("active");
 if (bullets[index]) {
-  bullets[index].classList.add("active");
-  activeBullet = bullets[index];
+bullets[index].classList.add("active");
+activeBullet = bullets[index];
 }
 bullets.forEach((bullet, i) => {
-  bullet.setAttribute("aria-selected", i === index ? "true" : "false");
+bullet.setAttribute("aria-selected", i === index ? "true" : "false");
 });
 }
 }
@@ -1516,7 +1516,7 @@ if (activeBullet) activeBullet.classList.remove("active");
 bullet.classList.add("active");
 activeBullet = bullet;
 bullets.forEach((b, j) => {
-  b.setAttribute("aria-selected", j === i ? "true" : "false");
+b.setAttribute("aria-selected", j === i ? "true" : "false");
 });
 });
 });
@@ -1552,8 +1552,8 @@ lastIndex = 0,
 tl = gsap.timeline({repeat: config.repeat, onUpdate: onChange && function() {
 let i = tl.closestIndex();
 if (lastIndex !== i) {
-  lastIndex = i;
-  onChange(items[i], i);
+lastIndex = i;
+onChange(items[i], i);
 }
 }, paused: config.paused, defaults: {ease: "none"}, onReverseComplete: () => tl.totalTime(tl.rawTime() + tl.duration() * 100)}),
 length = items.length,
@@ -1574,14 +1574,14 @@ getTotalWidth = () => items[length-1].offsetLeft + xPercents[length-1] / 100 * w
 populateWidths = () => {
 let b1 = container.getBoundingClientRect(), b2;
 items.forEach((el, i) => {
-  widths[i] = parseFloat(gsap.getProperty(el, "width", "px"));
-  xPercents[i] = snap(parseFloat(gsap.getProperty(el, "x", "px")) / widths[i] * 100 + gsap.getProperty(el, "xPercent"));
-  b2 = el.getBoundingClientRect();
-  spaceBefore[i] = b2.left - (i ? b1.right : b1.left);
-  b1 = b2;
+widths[i] = parseFloat(gsap.getProperty(el, "width", "px"));
+xPercents[i] = snap(parseFloat(gsap.getProperty(el, "x", "px")) / widths[i] * 100 + gsap.getProperty(el, "xPercent"));
+b2 = el.getBoundingClientRect();
+spaceBefore[i] = b2.left - (i ? b1.right : b1.left);
+b1 = b2;
 });
 gsap.set(items, {
-  xPercent: i => xPercents[i]
+xPercent: i => xPercents[i]
 });
 totalWidth = getTotalWidth();
 },
@@ -1589,22 +1589,22 @@ timeWrap,
 populateOffsets = () => {
 timeOffset = center ? tl.duration() * (container.offsetWidth / 2) / totalWidth : 0;
 center && times.forEach((t, i) => {
-  times[i] = timeWrap(tl.labels["label" + i] + tl.duration() * widths[i] / 2 / totalWidth - timeOffset);
+times[i] = timeWrap(tl.labels["label" + i] + tl.duration() * widths[i] / 2 / totalWidth - timeOffset);
 });
 },
 getClosest = (values, value, wrap) => {
 let i = values.length,
-    closest = 1e10,
-    index = 0, d;
+  closest = 1e10,
+  index = 0, d;
 while (i--) {
-  d = Math.abs(values[i] - value);
-  if (d > wrap / 2) {
-    d = wrap - d;
-  }
-  if (d < closest) {
-    closest = d;
-    index = i;
-  }
+d = Math.abs(values[i] - value);
+if (d > wrap / 2) {
+  d = wrap - d;
+}
+if (d < closest) {
+  closest = d;
+  index = i;
+}
 }
 return index;
 },
@@ -1612,14 +1612,14 @@ populateTimeline = () => {
 let i, item, curX, distanceToStart, distanceToLoop;
 tl.clear();
 for (i = 0; i < length; i++) {
-  item = items[i];
-  curX = xPercents[i] / 100 * widths[i];
-  distanceToStart = item.offsetLeft + curX - startX + spaceBefore[0];
-  distanceToLoop = distanceToStart + widths[i] * gsap.getProperty(item, "scaleX");
-  tl.to(item, {xPercent: snap((curX - distanceToLoop) / widths[i] * 100), duration: distanceToLoop / pixelsPerSecond}, 0)
-    .fromTo(item, {xPercent: snap((curX - distanceToLoop + totalWidth) / widths[i] * 100)}, {xPercent: xPercents[i], duration: (curX - distanceToLoop + totalWidth - curX) / pixelsPerSecond, immediateRender: false}, distanceToLoop / pixelsPerSecond)
-    .add("label" + i, distanceToStart / pixelsPerSecond);
-  times[i] = distanceToStart / pixelsPerSecond;
+item = items[i];
+curX = xPercents[i] / 100 * widths[i];
+distanceToStart = item.offsetLeft + curX - startX + spaceBefore[0];
+distanceToLoop = distanceToStart + widths[i] * gsap.getProperty(item, "scaleX");
+tl.to(item, {xPercent: snap((curX - distanceToLoop) / widths[i] * 100), duration: distanceToLoop / pixelsPerSecond}, 0)
+  .fromTo(item, {xPercent: snap((curX - distanceToLoop + totalWidth) / widths[i] * 100)}, {xPercent: xPercents[i], duration: (curX - distanceToLoop + totalWidth - curX) / pixelsPerSecond, immediateRender: false}, distanceToLoop / pixelsPerSecond)
+  .add("label" + i, distanceToStart / pixelsPerSecond);
+times[i] = distanceToStart / pixelsPerSecond;
 }
 timeWrap = gsap.utils.wrap(0, tl.duration());
 },
@@ -1699,12 +1699,12 @@ overshootTolerance: 0,
 inertia: true,
 snap(value) {
 if (Math.abs(startProgress / -ratio - this.x) < 10) {
-  return lastSnap + initChangeX
+return lastSnap + initChangeX
 }
 let time = -(value * ratio) * tl.duration(),
-    wrappedTime = timeWrap(time),
-    snapTime = times[getClosest(times, wrappedTime, tl.duration())],
-    dif = snapTime - wrappedTime;
+  wrappedTime = timeWrap(time),
+  snapTime = times[getClosest(times, wrappedTime, tl.duration())],
+  dif = snapTime - wrappedTime;
 Math.abs(dif) > tl.duration() / 2 && (dif += dif < 0 ? tl.duration() : -tl.duration());
 lastSnap = (time + dif) / tl.duration() / -ratio;
 return lastSnap;
@@ -1762,8 +1762,8 @@ duration: autoplayDuration / 1000,
 ease: "power1.inOut",
 onComplete: () => {
 if (!isAnimating) {
-  const nextIndex = (index + 1) % contentItems.length;
-  switchTab(nextIndex);
+const nextIndex = (index + 1) % contentItems.length;
+switchTab(nextIndex);
 }
 },
 });
@@ -1824,11 +1824,11 @@ switchTab(0);
 
 // switch tabs on click
 contentItems.forEach((item, i) =>
-               item.addEventListener("click", () => {
+             item.addEventListener("click", () => {
 if (item === activeContent) return;
 switchTab(i);
 })
-              );
+            );
 });
 }
 
@@ -1976,138 +1976,119 @@ if (!isMobile()) setState(false);
 });
 }
 
-/**
-* SceneSwap — image/text pair swapping on scroll
-* Dependencies: GSAP + ScrollTrigger optional, SplitText optional (for highlight control)
-* How to use:
-*   1) Add data-scene-root on the section wrapper.
-*   2) Add data-scene-image="1..N" to each <img> background.
-*   3) Add data-scene-text="1..N" to each matching <p> (or block) of text.
-*   4) Call initSceneSwap() after DOMContentLoaded (and after GSAP is loaded).
-*/
-function initSceneSwap(selector='[data-scene-root]', opts={}){
+function initSceneSwap(selector='[data-scene-root]', opts = {}) {
 const {
-scaleActive = 1.2,            // visual: active text scale
-fadedAlpha  = 0.4,            // visual: non-active character alpha (SplitText)
-imgFadeDur  = 0.6,
-start       = 'top 75%',      // ScrollTrigger start per text block
-end         = 'bottom 50%'    // ScrollTrigger end per text block
+  scaleActive = 1.2,
+  fadedAlpha  = 0.4,
+  imgFadeDur  = 0.6,
+  start       = 'top 75%',
+  end         = 'bottom 50%'
 } = opts;
 
-const hasGSAP        = typeof gsap !== 'undefined';
-const hasST          = typeof ScrollTrigger !== 'undefined';
-const hasSplitText   = typeof SplitText !== 'undefined';
+const hasGSAP      = typeof gsap !== 'undefined';
+const hasST        = typeof ScrollTrigger !== 'undefined';
+const hasSplitText = typeof SplitText !== 'undefined';
 
 document.querySelectorAll(selector).forEach(root => {
-const images = Array.from(root.querySelectorAll('[data-scene-image]'));
-const texts  = Array.from(root.querySelectorAll('[data-scene-text]'));
-if (!images.length || !texts.length) return;
+  const images = Array.from(root.querySelectorAll('[data-scene-image]'));
+  const texts  = Array.from(root.querySelectorAll('[data-scene-text]'));
+  if (!images.length || !texts.length) return;
 
-// index maps
-const imgById  = new Map(images.map(img => [String(img.getAttribute('data-scene-image')), img]));
-const textById = new Map(texts.map(t  => [String(t.getAttribute('data-scene-text')), t]));
+  // stack the images
+  images.forEach(img => {
+    img.style.position = 'absolute';
+    img.style.inset = '0';
+    if (!img.hasAttribute('loading')) img.setAttribute('loading','lazy');
+  });
 
-// Prepare images (stack)
-images.forEach(img => {
-img.style.position = 'absolute';
-img.style.inset = '0';
-if (!img.hasAttribute('loading')) img.setAttribute('loading','lazy');
-});
+  // optional SplitText
+  const splitMap = new Map();
+  if (hasGSAP && hasSplitText) {
+    texts.forEach(el => {
+      if (el.__splitApplied) return;
+      new SplitText(el, {
+        type: 'words, chars',
+        autoSplit: true,
+        onSplit(self){ splitMap.set(el, { chars: self.chars, faded: fadedAlpha }); }
+      });
+      el.__splitApplied = true;
+    });
+  }
 
-// Optional SplitText: store char arrays so we can “highlight” by alpha
-const splitMap = new Map(); // Element -> { chars, faded }
-if (hasGSAP && hasSplitText) {
-texts.forEach(el => {
-// Avoid double-splitting
-if (el.__splitApplied) return;
-new SplitText(el, {
-type:'words, chars',
-autoSplit:true,
-onSplit(self){
-  splitMap.set(el, { chars: self.chars, faded: fadedAlpha });
-}
-});
-el.__splitApplied = true;
-});
-}
+  function setActive(el, on){
+    if (!el) return;
+    if (on) el.setAttribute('data-scene-active','true');
+    else    el.removeAttribute('data-scene-active');
+    el.setAttribute('aria-current', on ? 'true' : 'false');
+  }
 
-// Utilities
-function setActive(el, on){
-if (!el) return;
-if (on) el.setAttribute('data-scene-active','true');
-else    el.removeAttribute('data-scene-active');
+  function setHighlight(el, on){
+    const rec = splitMap.get(el);
+    if (hasGSAP && rec && rec.chars) {
+      gsap.to(rec.chars, {
+        autoAlpha: on ? 1 : rec.faded,
+        duration: .35,
+        overwrite: 'auto',
+        ease: 'power1.out'
+      });
+    }
+  }
 
-// communicate which line is active without hiding the others
-el.setAttribute('aria-current', on ? 'true' : 'false');
-}
+  function swapTo(id){
+    const idStr = String(id);
 
-function setHighlight(el, on){
-const rec = splitMap.get(el);
-if (hasGSAP && rec && rec.chars) {
-gsap.to(rec.chars, {
-autoAlpha: on ? 1 : rec.faded,
-duration: .35,
-overwrite: 'auto',
-ease: 'power1.out'
-});
-} else {
-// fallback: rely on [data-scene-active] CSS (opacity/scale)
-}
-}
+    // images
+    images.forEach(img => {
+      const active = img.getAttribute('data-scene-image') === idStr;
+      setActive(img, active);
+      if (hasGSAP) {
+        gsap.to(img, {
+          autoAlpha: active ? 1 : 0,
+          duration: imgFadeDur,
+          ease: 'power2.inOut',
+          overwrite: 'auto'
+        });
+      }
+    });
 
-function swapTo(id){
-const idStr = String(id);
-// images
-images.forEach(img => {
-const active = img.getAttribute('data-scene-image') === idStr;
-setActive(img, active);
-if (hasGSAP) {
-gsap.to(img, {
-  autoAlpha: active ? 1 : 0,
-  duration: imgFadeDur,
-  ease: 'power2.inOut',
-  overwrite: 'auto'
-});
-}
-});
+    // texts
+    texts.forEach(t => {
+      const active = t.getAttribute('data-scene-text') === idStr;
+      setActive(t, active);
+      setHighlight(t, active);
+      if (hasGSAP && !splitMap.has(t)) {
+        gsap.to(t, {
+          opacity: active ? 1 : 0.55,
+          scale:   active ? scaleActive : 1,
+          duration: .35,
+          ease: 'power1.out',
+          overwrite: 'auto'
+        });
+      }
+    });
+  } // <-- close swapTo
 
-// texts
-texts.forEach(t => {
-const active = t.getAttribute('data-scene-text') === idStr;
-setActive(t, active);
-setHighlight(t, active); // drives character alpha when SplitText exists
+  // prime initial state
+  const allIds = [...new Set([
+    ...images.map(i => i.getAttribute('data-scene-image')),
+    ...texts.map(t => t.getAttribute('data-scene-text'))
+  ])].sort((a,b) => Number(a)-Number(b));
+  swapTo(allIds[0] || '1');
 
-if (hasGSAP && !splitMap.has(t)) {
-gsap.to(t, {
-opacity: active ? 1 : 0.55,   // ← still visible
-scale:   active ? scaleActive : 1,
-duration: .35,
-ease: 'power1.out',
-overwrite: 'auto'
-});
-}
+  // scroll binding
+  if (hasGSAP && hasST) {
+    texts.forEach(t => {
+      const id = t.getAttribute('data-scene-text');
+      ScrollTrigger.create({
+        trigger: t,
+        start,
+        end,
+        onEnter:     () => swapTo(id),
+        onEnterBack: () => swapTo(id)
+      });
+    });
+  }
+}); 
+} 
 
-
-// Prime initial state to the first index present in both sets
-const allIds = [...new Set([
-...images.map(i => i.getAttribute('data-scene-image')),
-...texts.map(t => t.getAttribute('data-scene-text'))
-])].sort((a,b) => Number(a)-Number(b));
-swapTo(allIds[0] || '1');
-
-// Scroll binding: when each text enters, become active
-if (hasGSAP && hasST) {
-texts.forEach(t => {
-const id = t.getAttribute('data-scene-text');
-ScrollTrigger.create({
-trigger: t,
-start,
-end,
-onEnter:     () => swapTo(id),
-onEnterBack: () => swapTo(id)
-});
-});
-}
-});
-}
 
