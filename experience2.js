@@ -1968,54 +1968,72 @@ if (!isMobile()) setState(false);
 });
 }
 
-// Call this after DOMContentLoaded:
 initExperienceScenes('#experience[data-scene-root]');
 
-function initExperienceScenes(selector = '[data-scene-root]') {
-if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+function initExperienceScenes(selector, {imgFadeDur=.35, fadedAlpha=.4}={}) {
+  if (typeof gsap==='undefined' || typeof ScrollTrigger==='undefined') return;
 
-document.querySelectorAll(selector).forEach(root => {
-  const imgs  = gsap.utils.toArray(root.querySelectorAll('[data-scene-image]'));
-  const texts = gsap.utils.toArray(root.querySelectorAll('[data-scene-text]'));
-  const n = Math.min(imgs.length, texts.length);
-  if (!n) return;
+  document.querySelectorAll(selector).forEach(root => {
+    const imgs  = gsap.utils.toArray(root.querySelectorAll('[data-scene-image]'));
+    const texts = gsap.utils.toArray(root.querySelectorAll('[data-scene-text]'));
+    const n = Math.min(imgs.length, texts.length);
+    if (!n) return;
 
-  // Stack images (fill the stage). First one visible.
-  imgs.forEach((img, i) => {
-    img.style.position = 'absolute';
-    img.style.inset = '0';
-    if (!img.hasAttribute('loading')) img.setAttribute('loading', 'lazy');
-    gsap.set(img, { autoAlpha: i === 0 ? 1 : 0 });
-  });
-
-  const setScene = (i) => {
-    imgs.forEach((img, idx) => {
-      gsap.to(img, { autoAlpha: idx === i ? 1 : 0, duration: 0.35, overwrite: 'auto', ease: 'power1.out' });
+    // Stack images, show first
+    imgs.forEach((img,i) => {
+      img.style.position = 'absolute';
+      img.style.inset = '0';
+      if (!img.hasAttribute('loading')) img.setAttribute('loading','lazy');
+      gsap.set(img, {autoAlpha: i===0 ? 1 : 0});
     });
-    texts.forEach((t, idx) => t.classList.toggle('is-active', idx === i));
-  };
 
-  // Initial state
-  setScene(0);
+    // Use existing SplitText wrappers (don’t re-split)
+    const getChars = (el) => {
+      if (el.__chars) return el.__chars;
+      // 1) GSAP SplitText usually adds .char
+      let chars = el.querySelectorAll('.char');
+      if (chars.length) return (el.__chars = chars);
+      // 2) Your current splitter uses aria-hidden wrappers: take leaf nodes
+      const candidates = el.querySelectorAll('[aria-hidden="true"]');
+      return (el.__chars = Array.from(candidates).filter(node => !node.children.length));
+    };
 
-  // Pin the section and step every 100vh
-  ScrollTrigger.create({
-    trigger: root,
-    start: 'top top',
-    end: () => '+=' + (Math.max(0, n - 1) * window.innerHeight),
-    pin: true,
-    scrub: true,
-    snap: n > 1 ? 1 / (n - 1) : 1, // snap to each 100vh step
-    onUpdate(self) {
-      const i = Math.round(self.progress * (n - 1));
-      if (i !== root.__sceneIndex) {
-        root.__sceneIndex = i;
-        setScene(i);
-      }
+    // Prime char opacity
+    texts.forEach((t,i) => gsap.set(getChars(t), {autoAlpha: i===0 ? 1 : fadedAlpha}));
+
+    function setScene(i){
+      imgs.forEach((img,idx) => {
+        gsap.to(img, {autoAlpha: idx===i ? 1 : 0, duration: imgFadeDur, ease:'power1.out', overwrite:'auto'});
+      });
+      texts.forEach((t,idx) => {
+        t.classList.toggle('is-active', idx===i);
+        const chars = getChars(t);
+        gsap.to(chars, {
+          autoAlpha: idx===i ? 1 : fadedAlpha,
+          duration: .35,
+          stagger: idx===i ? 0.015 : 0,
+          ease: 'linear',
+          overwrite: 'auto'
+        });
+      });
     }
+
+    setScene(0);
+
+    ScrollTrigger.create({
+      trigger: root,
+      start: 'top top',
+      end: () => '+=' + Math.max(0, n-1) * window.innerHeight,
+      pin: true,
+      scrub: true,
+      snap: n>1 ? 1/(n-1) : false,
+      onUpdate(self){
+        const i = Math.round(self.progress * (n-1));
+        if (i !== root.__sceneIndex){
+          root.__sceneIndex = i;
+          setScene(i);
+        }
+      }
+    });
   });
-});
 }
-
-
-
