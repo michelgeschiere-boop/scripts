@@ -1959,7 +1959,7 @@ if (!isMobile()) setState(false);
 });
 }
 
-initExperienceScenes('#experience[data-scene-root]');
+initExperienceScenes('[data-scene-root]');
 
 function initExperienceScenes(selector, {imgFadeDur=.35, fadedAlpha=.4}={}) {
 if (typeof gsap==='undefined' || typeof ScrollTrigger==='undefined') return;
