@@ -434,7 +434,7 @@ if (typeof gsap === 'undefined') return;
 
 // Only allow on devices with hover + fine pointer (mouse/trackpad)
 const supportsHoverFine = !!(window.matchMedia &&
-               window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+         window.matchMedia('(hover: hover) and (pointer: fine)').matches);
 
 // If not supported, hard-hide the containers and bail
 if (!supportsHoverFine) {
@@ -785,10 +785,10 @@ lightbox.setAttribute('data-vimeo-fullscreen', 'true');
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-                                            document.addEventListener(evt, () =>
-                                                                      lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
-                                                                     )
-                                           );
+                                      document.addEventListener(evt, () =>
+                                                                lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
+                                                               )
+                                     );
 }
 }
 
@@ -906,8 +906,8 @@ muteBtn?.addEventListener('click', () => {
 if (!player) return;
 globalMuted = !globalMuted;
 player.setVolume(globalMuted ? 0 : 1).then(() =>
-                               lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
-                              );
+                         lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
+                        );
 });
 
 openButtons.forEach(btn => {
@@ -1054,49 +1054,40 @@ currentIndex = idx;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Random session color + cursor theme hook
+// Random page-load color + cursor theme (no persistence)
 // ──────────────────────────────────────────────────────────────────────────────
+
 (() => {
 const THEMES = [
-{ name: 'red',    value: 'var(--color-red)' },
-{ name: 'green',  value: 'var(--color-green)' },
-{ name: 'blue',   value: 'var(--color-blue)' },
-{ name: 'yellow', value: 'var(--color-yellow)' },
-{ name: 'orange', value: 'var(--color-orange)' }
+  { name: 'red',    value: 'var(--color-red)' },
+  { name: 'green',  value: 'var(--color-green)' },
+  { name: 'blue',   value: 'var(--color-blue)' },
+  { name: 'yellow', value: 'var(--color-yellow)' },
+  { name: 'orange', value: 'var(--color-orange)' }
 ];
 
-// Persist a stable choice for the session
-let idx = parseInt(sessionStorage.getItem('__randomThemeIndex'), 10);
-if (!Number.isInteger(idx) || idx < 0 || idx >= THEMES.length) {
-idx = Math.floor(Math.random() * THEMES.length);
-sessionStorage.setItem('__randomThemeIndex', String(idx));
+function pickTheme() {
+  const idx = Math.floor(Math.random() * THEMES.length);
+  return THEMES[idx];
 }
-const theme = THEMES[idx];
 
-// 1) Set attribute on <html> so your cursor CSS applies immediately
-//    e.g. html[data-cursor-theme="red"] { cursor: url(...); }
-document.documentElement.setAttribute('data-cursor-theme', theme.name);
+function paint(theme) {
+  document.documentElement.setAttribute('data-cursor-theme', theme.name);
 
-// 2) (Optional) Also reflect on <body> if you want to target it in other styles/scripts
-//    Note: cursor CSS already targets html[data-cursor-theme="..."] body,* so this is extra.
-const setBodyAttr = () => document.body?.setAttribute('data-cursor-theme', theme.name);
-if (document.body) setBodyAttr(); else document.addEventListener('DOMContentLoaded', setBodyAttr);
-
-// 3) Keep your existing behavior: paint elements that opt-in to the random color
-const paint = () => {
-document.querySelectorAll('[data-color-random]').forEach((el) => {
-const type = el.getAttribute('data-color-random');
-if (type === 'bg')   el.style.backgroundColor = theme.value;
-else if (type === 'text') el.style.color = theme.value;
-});
-};
-// Run now for already-parsed nodes, and again after DOM is ready
-paint();
-if (document.readyState === 'loading') {
-document.addEventListener('DOMContentLoaded', paint);
+  document.querySelectorAll('[data-color-random]').forEach((el) => {
+    const type = el.getAttribute('data-color-random');
+    if (type === 'bg') el.style.backgroundColor = theme.value;
+    else if (type === 'text') el.style.color = theme.value;
+  });
 }
+
+function setRandomCursorTheme() {
+  paint(pickTheme());
+}
+
+setRandomCursorTheme();
+window.setRandomCursorTheme = setRandomCursorTheme;
 })();
-
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Basic Filter Setup (Multi Match)
@@ -1276,22 +1267,22 @@ onComplete: () => gsap.set(slot.el, { clearProps: 'all' })
 } else {
 if (slot.includeParent) {
 tl.to(slot.parentEl, {
-  y: 0,
-  autoAlpha: 1,
-  duration: animDuration,
-  ease: animEase,
-  onComplete: () => gsap.set(slot.parentEl, { clearProps: 'all' })
+y: 0,
+autoAlpha: 1,
+duration: animDuration,
+ease: animEase,
+onComplete: () => gsap.set(slot.parentEl, { clearProps: 'all' })
 }, slotTime);
 }
 const nestedMs = parseFloat(slot.nestedEl.getAttribute('data-stagger'));
 const nestedStaggerSec = isNaN(nestedMs) ? groupStaggerSec : nestedMs / 1000;
 Array.from(slot.nestedEl.children).forEach((nestedChild, nestedIndex) => {
 tl.to(nestedChild, {
-  y: 0,
-  autoAlpha: 1,
-  duration: animDuration,
-  ease: animEase,
-  onComplete: () => gsap.set(nestedChild, { clearProps: 'all' })
+y: 0,
+autoAlpha: 1,
+duration: animDuration,
+ease: animEase,
+onComplete: () => gsap.set(nestedChild, { clearProps: 'all' })
 }, slotTime + nestedIndex * nestedStaggerSec);
 });
 }
@@ -1371,8 +1362,8 @@ window.addEventListener('resize', onResize);
 const imgLoad = () => {
 const imgs = container.querySelectorAll('img');
 return Promise.all(Array.from(imgs).map(img =>
-                              (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
-                             ));
+                        (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
+                       ));
 };
 
 // When images are ready, set the layout
@@ -1816,11 +1807,11 @@ switchTab(0);
 
 // switch tabs on click
 contentItems.forEach((item, i) =>
-         item.addEventListener("click", () => {
+   item.addEventListener("click", () => {
 if (item === activeContent) return;
 switchTab(i);
 })
-        );
+  );
 });
 }
 
@@ -1971,69 +1962,69 @@ if (!isMobile()) setState(false);
 initExperienceScenes('#experience[data-scene-root]');
 
 function initExperienceScenes(selector, {imgFadeDur=.35, fadedAlpha=.4}={}) {
-  if (typeof gsap==='undefined' || typeof ScrollTrigger==='undefined') return;
+if (typeof gsap==='undefined' || typeof ScrollTrigger==='undefined') return;
 
-  document.querySelectorAll(selector).forEach(root => {
-    const imgs  = gsap.utils.toArray(root.querySelectorAll('[data-scene-image]'));
-    const texts = gsap.utils.toArray(root.querySelectorAll('[data-scene-text]'));
-    const n = Math.min(imgs.length, texts.length);
-    if (!n) return;
+document.querySelectorAll(selector).forEach(root => {
+const imgs  = gsap.utils.toArray(root.querySelectorAll('[data-scene-image]'));
+const texts = gsap.utils.toArray(root.querySelectorAll('[data-scene-text]'));
+const n = Math.min(imgs.length, texts.length);
+if (!n) return;
 
-    // Stack images, show first
-    imgs.forEach((img,i) => {
-      img.style.position = 'absolute';
-      img.style.inset = '0';
-      if (!img.hasAttribute('loading')) img.setAttribute('loading','lazy');
-      gsap.set(img, {autoAlpha: i===0 ? 1 : 0});
-    });
+// Stack images, show first
+imgs.forEach((img,i) => {
+img.style.position = 'absolute';
+img.style.inset = '0';
+if (!img.hasAttribute('loading')) img.setAttribute('loading','lazy');
+gsap.set(img, {autoAlpha: i===0 ? 1 : 0});
+});
 
-    // Use existing SplitText wrappers (don’t re-split)
-    const getChars = (el) => {
-      if (el.__chars) return el.__chars;
-      // 1) GSAP SplitText usually adds .char
-      let chars = el.querySelectorAll('.char');
-      if (chars.length) return (el.__chars = chars);
-      // 2) Your current splitter uses aria-hidden wrappers: take leaf nodes
-      const candidates = el.querySelectorAll('[aria-hidden="true"]');
-      return (el.__chars = Array.from(candidates).filter(node => !node.children.length));
-    };
+// Use existing SplitText wrappers (don’t re-split)
+const getChars = (el) => {
+if (el.__chars) return el.__chars;
+// 1) GSAP SplitText usually adds .char
+let chars = el.querySelectorAll('.char');
+if (chars.length) return (el.__chars = chars);
+// 2) Your current splitter uses aria-hidden wrappers: take leaf nodes
+const candidates = el.querySelectorAll('[aria-hidden="true"]');
+return (el.__chars = Array.from(candidates).filter(node => !node.children.length));
+};
 
-    // Prime char opacity
-    texts.forEach((t,i) => gsap.set(getChars(t), {autoAlpha: i===0 ? 1 : fadedAlpha}));
+// Prime char opacity
+texts.forEach((t,i) => gsap.set(getChars(t), {autoAlpha: i===0 ? 1 : fadedAlpha}));
 
-    function setScene(i){
-      imgs.forEach((img,idx) => {
-        gsap.to(img, {autoAlpha: idx===i ? 1 : 0, duration: imgFadeDur, ease:'power1.out', overwrite:'auto'});
-      });
-      texts.forEach((t,idx) => {
-        t.classList.toggle('is-active', idx===i);
-        const chars = getChars(t);
-        gsap.to(chars, {
-          autoAlpha: idx===i ? 1 : fadedAlpha,
-          duration: .35,
-          stagger: idx===i ? 0.015 : 0,
-          ease: 'linear',
-          overwrite: 'auto'
-        });
-      });
-    }
-
-    setScene(0);
-
-    ScrollTrigger.create({
-      trigger: root,
-      start: 'top top',
-      end: () => '+=' + Math.max(0, n-1) * window.innerHeight,
-      pin: true,
-      scrub: true,
-      snap: n>1 ? 1/(n-1) : false,
-      onUpdate(self){
-        const i = Math.round(self.progress * (n-1));
-        if (i !== root.__sceneIndex){
-          root.__sceneIndex = i;
-          setScene(i);
-        }
-      }
-    });
+function setScene(i){
+imgs.forEach((img,idx) => {
+  gsap.to(img, {autoAlpha: idx===i ? 1 : 0, duration: imgFadeDur, ease:'power1.out', overwrite:'auto'});
+});
+texts.forEach((t,idx) => {
+  t.classList.toggle('is-active', idx===i);
+  const chars = getChars(t);
+  gsap.to(chars, {
+    autoAlpha: idx===i ? 1 : fadedAlpha,
+    duration: .35,
+    stagger: idx===i ? 0.015 : 0,
+    ease: 'linear',
+    overwrite: 'auto'
   });
+});
+}
+
+setScene(0);
+
+ScrollTrigger.create({
+trigger: root,
+start: 'top top',
+end: () => '+=' + Math.max(0, n-1) * window.innerHeight,
+pin: true,
+scrub: true,
+snap: n>1 ? 1/(n-1) : false,
+onUpdate(self){
+  const i = Math.round(self.progress * (n-1));
+  if (i !== root.__sceneIndex){
+    root.__sceneIndex = i;
+    setScene(i);
+  }
+}
+});
+});
 }
