@@ -787,10 +787,10 @@ lightbox.setAttribute('data-vimeo-fullscreen', 'true');
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-                           document.addEventListener(evt, () =>
-                                                     lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
-                                                    )
-                          );
+                         document.addEventListener(evt, () =>
+                                                   lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
+                                                  )
+                        );
 }
 }
 
@@ -908,8 +908,8 @@ muteBtn?.addEventListener('click', () => {
 if (!player) return;
 globalMuted = !globalMuted;
 player.setVolume(globalMuted ? 0 : 1).then(() =>
-              lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
-             );
+            lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
+           );
 });
 
 openButtons.forEach(btn => {
@@ -1364,8 +1364,8 @@ window.addEventListener('resize', onResize);
 const imgLoad = () => {
 const imgs = container.querySelectorAll('img');
 return Promise.all(Array.from(imgs).map(img =>
-             (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
-            ));
+           (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
+          ));
 };
 
 // When images are ready, set the layout
@@ -1968,101 +1968,86 @@ if (!isMobile()) setState(false);
 /* Scene scroll sticky */
 // ──────────────────────────────────────────────────────────────────────────────
 
-function initExperienceScenes(
-rootSelector = '[data-scene-root]',
-{
-  textSelector = '[data-scene-text]',
-  totalVh = 400,           // pin distance
-  fadedAlpha = 0.35,       // non-active alpha
-  enterDur = 0.9,          // highlight duration
-  ease = 'osmo-ease'       // fallback to 'power3.out' if not available
-} = {}
-) {
-if (typeof gsap==='undefined' || typeof ScrollTrigger==='undefined') return;
+initExperienceScenes('[data-scene-root]');
 
-document.querySelectorAll(rootSelector).forEach(root => {
-  const texts = gsap.utils.toArray(root.querySelectorAll(textSelector));
+function initExperienceScenes(selector, { imgFadeDur = 0.35, fadedAlpha = 0.35 } = {}) {
+if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+
+document.querySelectorAll(selector).forEach(root => {
+  const stage = root.querySelector('[data-scene-stage]') || root.querySelector('.scene-sticky') || root;
+  const texts = gsap.utils.toArray(root.querySelectorAll('[data-scene-text]'));
   if (!texts.length) return;
 
-  // derive segments from totalVh so each 100vh == 1 step
-  const segments = Math.max(1, Math.round(totalVh / 100));
+  // 1) Split the scene texts into characters (so highlight effect can work)
+  if (typeof SplitText !== 'undefined') {
+    texts.forEach(t => {
+      if (!t.__split) {
+        t.__split = new SplitText(t, { type: 'chars', charsClass: 'char' });
+      }
+      t.__chars = t.__split.chars;
+    });
+  } else {
+    // fallback: no SplitText, fade whole paragraph
+    texts.forEach(t => (t.__chars = []));
+  }
 
-  // helper to get characters (prefers SplitText; falls back to aria-hidden leaves; else whole node)
-  const getChars = (el) => {
-    if (el.__chars) return el.__chars;
-    let chars = [];
-    // 1) if SplitText exists, split once
-    if (typeof SplitText !== 'undefined') {
-      const s = new SplitText(el, { type: 'chars', reduceWhiteSpace: false });
-      chars = s.chars || [];
-    } else {
-      // 2) use your existing aria-hidden leaves if present
-      const leaves = el.querySelectorAll('[aria-hidden="true"]');
-      chars = Array.from(leaves).filter(node => !node.children.length);
-    }
-    // 3) fallback to the element itself
-    if (!chars.length) chars = [el];
-    el.__chars = chars;
-    return chars;
-  };
-
-  // prime states: first is highlighted, others dim
+  // 2) Initial states (first text visible, others dim/hidden)
   texts.forEach((t, i) => {
-    const chars = getChars(t);
-    if (i === 0) {
-      gsap.set(chars, { autoAlpha: 1 });
-      t.classList.add('is-active');
-    } else {
-      gsap.set(chars, { autoAlpha: fadedAlpha });
-      t.classList.remove('is-active');
+    gsap.set(t, { autoAlpha: i === 0 ? 1 : 0 });
+    if (t.__chars.length) {
+      gsap.set(t.__chars, { autoAlpha: i === 0 ? 1 : fadedAlpha });
     }
   });
 
-  let activeIndex = 0;
-  let tlPlaying = null;
+  // 3) Scene setter (activate one text, dim the rest)
+  function setScene(activeIndex) {
+    texts.forEach((t, i) => {
+      const isActive = i === activeIndex;
 
-  const highlightIn = (el) => {
-    const chars = getChars(el);
-    if (tlPlaying) tlPlaying.kill();
-    gsap.set(chars, { autoAlpha: fadedAlpha });
-    tlPlaying = gsap.to(chars, {
-      autoAlpha: 1,
-      duration: enterDur,
-      ease: (typeof CustomEase!=='undefined' ? ease : 'power3.out'),
-      stagger: 0.02,
-      overwrite: 'auto'
+      // paragraph fade in/out
+      gsap.to(t, {
+        autoAlpha: isActive ? 1 : 0,
+        duration: isActive ? 0.5 : 0.35,
+        ease: 'power2.out',
+        overwrite: 'auto'
+      });
+
+      // “highlight” feel on chars (smooth & slow)
+      if (t.__chars.length) {
+        gsap.to(t.__chars, {
+          autoAlpha: isActive ? 1 : fadedAlpha,
+          duration: isActive ? 0.8 : 0.35,
+          stagger: isActive ? 0.02 : 0,
+          ease: 'linear',
+          overwrite: 'auto'
+        });
+      }
     });
-  };
+  }
 
-  const dimOut = (el) => {
-    const chars = getChars(el);
-    gsap.to(chars, { autoAlpha: fadedAlpha, duration: 0.35, ease: 'linear', overwrite: 'auto' });
-  };
+  // 4) ScrollTrigger — 400vh root = 4 slices of 100vh
+  // Make the next text active every 100vh
+  const slices = Math.max(1, texts.length);       // e.g. 4 texts
+  const totalSteps = slices - 1;                  // e.g. 3 changes across 400vh
+  const endLength = `${totalSteps * 100}vh`;      // e.g. "+=300vh"
 
-  const setActive = (i) => {
-    i = Math.max(0, Math.min(texts.length - 1, i));
-    if (i === activeIndex) return;
-    dimOut(texts[activeIndex]);
-    texts[activeIndex].classList.remove('is-active');
-    activeIndex = i;
-    texts[activeIndex].classList.add('is-active');
-    highlightIn(texts[activeIndex]);
-  };
-
-  // Pin the section and step every 100vh
   ScrollTrigger.create({
     trigger: root,
     start: 'top top',
-    end: `+=${totalVh}vh`,
-    pin: true,
+    end: `+=${endLength}`,
+    pin: stage,            // keeps the block sticky
     scrub: true,
-    snap: segments > 1 ? 1 / (segments - 1) : false,
-    onEnter() { highlightIn(texts[0]); },
     onUpdate(self) {
-      // progress [0..1] → segment index [0..segments-1] → clamp to number of texts
-      const segIndex = Math.round(self.progress * (segments - 1));
-      setActive(Math.min(texts.length - 1, segIndex));
+      const idx = Math.min(totalSteps, Math.floor(self.progress * totalSteps + 1e-6));
+      if (idx !== root.__sceneIndex) {
+        root.__sceneIndex = idx;
+        setScene(idx);
+      }
     }
   });
+
+  // ensure first scene is rendered
+  setScene(0);
 });
 }
+
