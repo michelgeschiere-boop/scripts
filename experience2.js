@@ -39,7 +39,7 @@ gsap?.ticker.add((time) => { lenis.raf(time * 1000); });
 initHighlightText();
 initGlobalParallax();
 initStackingCardsParallax();
-initStackedCardsSlider();
+//initStackedCardsSlider();
 initGlowingInteractiveDotsGrid();
 initDynamicCurrentYear();
 initVimeoLightboxAdvanced();
@@ -74,7 +74,7 @@ if (!splitHeadingTargets.length) return;
 
 for (const heading of splitHeadingTargets) {
 const scrollStart  = heading.getAttribute('data-highlight-scroll-start') || 'top 60%';
-const scrollEnd    = heading.getAttribute('data-highlight-scroll-end')   || 'center 40%';
+const scrollEnd    = heading.getAttribute('data-highlight-scroll-end')   || 'center 20%';
 const fadedValue   = parseFloat(heading.getAttribute('data-highlight-fade'))    || 0.4;
 const staggerValue = parseFloat(heading.getAttribute('data-highlight-stagger')) || 0.1;
 
@@ -264,7 +264,7 @@ invalidateOnRefresh: true
 });
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
+/* ──────────────────────────────────────────────────────────────────────────────
 // Stacked Cards Slider (Draggable)
 // ──────────────────────────────────────────────────────────────────────────────
 function initStackedCardsSlider() {
@@ -425,6 +425,8 @@ btn.addEventListener('click', () => flick());
 });
 });
 }
+
+*/
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Glowing Interactive Dots Grid (hover-only interactivity)
