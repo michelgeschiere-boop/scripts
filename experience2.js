@@ -55,6 +55,7 @@ initCopyEmailClipboard();
 initCustomSubmitButton();
 initMobileNavMenu();
 initThemedSVGCursor();
+initSceneScrollSticky();
 
 // One refresh after all ScrollTriggers are created
 if (typeof ScrollTrigger !== 'undefined') {
@@ -787,10 +788,10 @@ lightbox.setAttribute('data-vimeo-fullscreen', 'true');
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-                         document.addEventListener(evt, () =>
-                                                   lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
-                                                  )
-                        );
+                       document.addEventListener(evt, () =>
+                                                 lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
+                                                )
+                      );
 }
 }
 
@@ -908,8 +909,8 @@ muteBtn?.addEventListener('click', () => {
 if (!player) return;
 globalMuted = !globalMuted;
 player.setVolume(globalMuted ? 0 : 1).then(() =>
-            lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
-           );
+          lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
+         );
 });
 
 openButtons.forEach(btn => {
@@ -1364,8 +1365,8 @@ window.addEventListener('resize', onResize);
 const imgLoad = () => {
 const imgs = container.querySelectorAll('img');
 return Promise.all(Array.from(imgs).map(img =>
-           (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
-          ));
+         (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
+        ));
 };
 
 // When images are ready, set the layout
@@ -1965,8 +1966,66 @@ if (!isMobile()) setState(false);
 
 
 // ──────────────────────────────────────────────────────────────────────────────
-/* Scene scroll sticky */
+// Scene scroll sticky: highlight one paragraph per 100vh
 // ──────────────────────────────────────────────────────────────────────────────
+function initSceneScrollSticky() {
+if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+
+document.querySelectorAll('[data-scene-root]').forEach((root) => {
+  const texts = Array.from(root.querySelectorAll('[data-scene-text]'));
+  if (!texts.length) return;
+
+  // Pin the text stack; leave bg image/overlay free (they’re siblings of .scene-stick)
+  const pinTarget = root.querySelector('.scene-stick') || root;
+
+  const count = texts.length;
+  const totalVH = count * 100;
+
+  // Ensure the section is tall enough (e.g. 400vh for 4 items)
+  // Only set if author CSS didn’t already force a height
+  if (!root.style.height && !root.style.minHeight) {
+    root.style.minHeight = `${totalVH}vh`;
+  }
+
+  // utility: toggle active class
+  const setActive = (i) => {
+    if (root._activeIndex === i) return;
+    root._activeIndex = i;
+    texts.forEach((el, idx) => el.classList.toggle('is-active', idx === i));
+  };
+
+  // main ST that drives which paragraph is active
+  ScrollTrigger.create({
+    trigger: root,
+    start: 'top top',
+    end: `+=${totalVH}vh`,
+    pin: pinTarget,
+    anticipatePin: 1,
+    scrub: true,
+    invalidateOnRefresh: true,
+    onUpdate(self) {
+      // progress 0..1 → index 0..count-1 (every 1/count = 100vh)
+      const i = Math.min(count - 1, Math.floor(self.progress * count + 1e-6));
+      setActive(i);
+    },
+    onRefresh() {
+      setActive(0);
+    }
+  });
+
+  // optional snapping to each 100vh segment (feels nice with Lenis)
+  ScrollTrigger.create({
+    trigger: root,
+    start: 'top top',
+    end: `+=${totalVH}vh`,
+    snap: {
+      snapTo: (v) => Math.round(v * count) / count, // 0, .25, .5, .75, 1 for 4 items
+      duration: 0.35,
+      ease: 'power1.inOut'
+    }
+  });
+});
+}
 
 
 
