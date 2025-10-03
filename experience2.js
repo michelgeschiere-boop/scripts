@@ -74,7 +74,7 @@ if (!splitHeadingTargets.length) return;
 
 for (const heading of splitHeadingTargets) {
 const scrollStart  = heading.getAttribute('data-highlight-scroll-start') || 'top 90%';
-const scrollEnd    = heading.getAttribute('data-highlight-scroll-end')   || 'bottom 30%';
+const scrollEnd    = heading.getAttribute('data-highlight-scroll-end')   || 'center 30%';
 const fadedValue   = parseFloat(heading.getAttribute('data-highlight-fade'))    || 0.4;
 const staggerValue = parseFloat(heading.getAttribute('data-highlight-stagger')) || 0.2;
 
