@@ -48,7 +48,7 @@ initStickyFeatures();
 initBasicFilterSetupMultiMatch();
 initContentRevealScroll();
 initMasonryGrid();
-initSliders();
+//initSliders();
 initTabSystem();
 initModals();
 initCopyEmailClipboard();
