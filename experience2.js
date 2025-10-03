@@ -436,7 +436,7 @@ if (typeof gsap === 'undefined') return;
 
 // Only allow on devices with hover + fine pointer (mouse/trackpad)
 const supportsHoverFine = !!(window.matchMedia &&
-         window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+window.matchMedia('(hover: hover) and (pointer: fine)').matches);
 
 // If not supported, hard-hide the containers and bail
 if (!supportsHoverFine) {
@@ -787,10 +787,10 @@ lightbox.setAttribute('data-vimeo-fullscreen', 'true');
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-                                      document.addEventListener(evt, () =>
-                                                                lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
-                                                               )
-                                     );
+                             document.addEventListener(evt, () =>
+                                                       lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
+                                                      )
+                            );
 }
 }
 
@@ -908,8 +908,8 @@ muteBtn?.addEventListener('click', () => {
 if (!player) return;
 globalMuted = !globalMuted;
 player.setVolume(globalMuted ? 0 : 1).then(() =>
-                         lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
-                        );
+                lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
+               );
 });
 
 openButtons.forEach(btn => {
@@ -1061,30 +1061,30 @@ currentIndex = idx;
 
 (() => {
 const THEMES = [
-  { name: 'red',    value: 'var(--color-red)' },
-  { name: 'green',  value: 'var(--color-green)' },
-  { name: 'blue',   value: 'var(--color-blue)' },
-  { name: 'yellow', value: 'var(--color-yellow)' },
-  { name: 'orange', value: 'var(--color-orange)' }
+{ name: 'red',    value: 'var(--color-red)' },
+{ name: 'green',  value: 'var(--color-green)' },
+{ name: 'blue',   value: 'var(--color-blue)' },
+{ name: 'yellow', value: 'var(--color-yellow)' },
+{ name: 'orange', value: 'var(--color-orange)' }
 ];
 
 function pickTheme() {
-  const idx = Math.floor(Math.random() * THEMES.length);
-  return THEMES[idx];
+const idx = Math.floor(Math.random() * THEMES.length);
+return THEMES[idx];
 }
 
 function paint(theme) {
-  document.documentElement.setAttribute('data-cursor-theme', theme.name);
+document.documentElement.setAttribute('data-cursor-theme', theme.name);
 
-  document.querySelectorAll('[data-color-random]').forEach((el) => {
-    const type = el.getAttribute('data-color-random');
-    if (type === 'bg') el.style.backgroundColor = theme.value;
-    else if (type === 'text') el.style.color = theme.value;
-  });
+document.querySelectorAll('[data-color-random]').forEach((el) => {
+const type = el.getAttribute('data-color-random');
+if (type === 'bg') el.style.backgroundColor = theme.value;
+else if (type === 'text') el.style.color = theme.value;
+});
 }
 
 function setRandomCursorTheme() {
-  paint(pickTheme());
+paint(pickTheme());
 }
 
 setRandomCursorTheme();
@@ -1364,8 +1364,8 @@ window.addEventListener('resize', onResize);
 const imgLoad = () => {
 const imgs = container.querySelectorAll('img');
 return Promise.all(Array.from(imgs).map(img =>
-                        (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
-                       ));
+               (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
+              ));
 };
 
 // When images are ready, set the layout
@@ -1393,6 +1393,7 @@ container.style.height = '';
 // ──────────────────────────────────────────────────────────────────────────────
 /* Sliders + helper (added) */
 // ──────────────────────────────────────────────────────────────────────────────
+/*
 function initSliders() {
 if (typeof gsap === 'undefined') return;
 
@@ -1713,6 +1714,7 @@ return () => window.removeEventListener("resize", onResize);
 });
 return timeline;
 }
+*/
 
 // ──────────────────────────────────────────────────────────────────────────────
 /* Tab System (added) */
@@ -1809,11 +1811,11 @@ switchTab(0);
 
 // switch tabs on click
 contentItems.forEach((item, i) =>
-   item.addEventListener("click", () => {
+item.addEventListener("click", () => {
 if (item === activeContent) return;
 switchTab(i);
 })
-  );
+);
 });
 }
 
@@ -1961,72 +1963,106 @@ if (!isMobile()) setState(false);
 });
 }
 
-initExperienceScenes('[data-scene-root]');
 
-function initExperienceScenes(selector, {imgFadeDur=.35, fadedAlpha=.4}={}) {
+// ──────────────────────────────────────────────────────────────────────────────
+/* Scene scroll sticky */
+// ──────────────────────────────────────────────────────────────────────────────
+
+function initExperienceScenes(selector, {fadedAlpha=.35, enterDur=.8, ease='osmo-ease'}={}) {
 if (typeof gsap==='undefined' || typeof ScrollTrigger==='undefined') return;
 
 document.querySelectorAll(selector).forEach(root => {
-const imgs  = gsap.utils.toArray(root.querySelectorAll('[data-scene-image]'));
 const texts = gsap.utils.toArray(root.querySelectorAll('[data-scene-text]'));
-const n = Math.min(imgs.length, texts.length);
-if (!n) return;
+if (!texts.length) return;
 
-// Stack images, show first
-imgs.forEach((img,i) => {
-img.style.position = 'absolute';
-img.style.inset = '0';
-if (!img.hasAttribute('loading')) img.setAttribute('loading','lazy');
-gsap.set(img, {autoAlpha: i===0 ? 1 : 0});
-});
-
-// Use existing SplitText wrappers (don’t re-split)
+// Prep: stack texts and split to characters (once)
+const splits = new Map();
 const getChars = (el) => {
-if (el.__chars) return el.__chars;
-// 1) GSAP SplitText usually adds .char
-let chars = el.querySelectorAll('.char');
-if (chars.length) return (el.__chars = chars);
-// 2) Your current splitter uses aria-hidden wrappers: take leaf nodes
-const candidates = el.querySelectorAll('[aria-hidden="true"]');
-return (el.__chars = Array.from(candidates).filter(node => !node.children.length));
+if (splits.has(el)) return splits.get(el);
+let chars = el.querySelectorAll('.char'); // if already SplitText'ed elsewhere
+if (!chars.length && typeof SplitText !== 'undefined') {
+const s = new SplitText(el, { type: 'chars', reduceWhiteSpace: false });
+chars = s.chars;
+}
+chars = Array.from(chars);
+splits.set(el, chars);
+return chars;
 };
 
-// Prime char opacity
-texts.forEach((t,i) => gsap.set(getChars(t), {autoAlpha: i===0 ? 1 : fadedAlpha}));
+texts.forEach((t,i) => {
+t.style.position = 'absolute';
+t.style.inset = '0';
+t.style.willChange = 'opacity, transform';
+const chars = getChars(t);
+gsap.set(chars.length ? chars : t, { autoAlpha: i===0 ? 1 : fadedAlpha, y: i===0 ? 0 : 0 });
+t.classList.toggle('is-active', i===0);
+});
 
-function setScene(i){
-imgs.forEach((img,idx) => {
-  gsap.to(img, {autoAlpha: idx===i ? 1 : 0, duration: imgFadeDur, ease:'power1.out', overwrite:'auto'});
+let activeIndex = 0;
+let playingTL = null;
+
+function highlightIn(el){
+const chars = getChars(el);
+if (playingTL) playingTL.kill();
+// reset target to dim state first
+if (chars.length) gsap.set(chars, { autoAlpha: fadedAlpha });
+else gsap.set(el, { autoAlpha: fadedAlpha });
+
+// animate to highlighted
+playingTL = gsap.timeline();
+if (chars.length) {
+playingTL.to(chars, {
+ autoAlpha: 1,
+ duration: enterDur,
+ ease,
+ stagger: 0.02
 });
-texts.forEach((t,idx) => {
-  t.classList.toggle('is-active', idx===i);
-  const chars = getChars(t);
-  gsap.to(chars, {
-    autoAlpha: idx===i ? 1 : fadedAlpha,
-    duration: .35,
-    stagger: idx===i ? 0.015 : 0,
-    ease: 'linear',
-    overwrite: 'auto'
-  });
-});
+} else {
+playingTL.to(el, { autoAlpha: 1, duration: enterDur, ease });
+}
 }
 
-setScene(0);
+function dimOut(el){
+const chars = getChars(el);
+if (chars.length) gsap.to(chars, { autoAlpha: fadedAlpha, duration: 0.35, ease: 'linear', overwrite: 'auto' });
+else gsap.to(el, { autoAlpha: fadedAlpha, duration: 0.35, ease: 'linear', overwrite: 'auto' });
+}
+
+function setScene(i){
+i = Math.max(0, Math.min(texts.length - 1, i));
+if (i === activeIndex) return;
+dimOut(texts[activeIndex]);
+texts[activeIndex].classList.remove('is-active');
+
+activeIndex = i;
+texts[activeIndex].classList.add('is-active');
+highlightIn(texts[activeIndex]);
+}
+
+// Determine segments from the pinned distance; default to 400vh => 4 segments (100vh each)
+const SEGMENTS = 4; // exactly one text per 100vh on a 400vh section
+// If you ever vary the height, you can compute: Math.max(1, Math.round(root.clientHeight / window.innerHeight))
 
 ScrollTrigger.create({
 trigger: root,
 start: 'top top',
-end: () => '+=' + Math.max(0, n-1) * window.innerHeight,
+end: '+=' + (SEGMENTS * 100) + 'vh', // 400vh total
 pin: true,
 scrub: true,
-snap: n>1 ? 1/(n-1) : false,
+snap: 1/(SEGMENTS-1), // snap at every 100vh
 onUpdate(self){
-  const i = Math.round(self.progress * (n-1));
-  if (i !== root.__sceneIndex){
-    root.__sceneIndex = i;
-    setScene(i);
-  }
+// Map progress (0..1) to segment index 0..SEGMENTS-1
+const raw = self.progress * (SEGMENTS - 1);
+const segIndex = Math.round(raw);
+// If you have fewer texts than segments, clamp by texts.length
+const targetIndex = Math.min(texts.length - 1, segIndex);
+if (targetIndex !== activeIndex) setScene(targetIndex);
+},
+onEnter() {
+// ensure first is highlighted
+highlightIn(texts[0]);
 }
 });
 });
 }
+
