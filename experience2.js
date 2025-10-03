@@ -787,10 +787,10 @@ lightbox.setAttribute('data-vimeo-fullscreen', 'true');
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-                             document.addEventListener(evt, () =>
-                                                       lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
-                                                      )
-                            );
+                           document.addEventListener(evt, () =>
+                                                     lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
+                                                    )
+                          );
 }
 }
 
@@ -908,8 +908,8 @@ muteBtn?.addEventListener('click', () => {
 if (!player) return;
 globalMuted = !globalMuted;
 player.setVolume(globalMuted ? 0 : 1).then(() =>
-                lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
-               );
+              lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
+             );
 });
 
 openButtons.forEach(btn => {
@@ -1364,8 +1364,8 @@ window.addEventListener('resize', onResize);
 const imgLoad = () => {
 const imgs = container.querySelectorAll('img');
 return Promise.all(Array.from(imgs).map(img =>
-               (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
-              ));
+             (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
+            ));
 };
 
 // When images are ready, set the layout
@@ -1968,101 +1968,101 @@ if (!isMobile()) setState(false);
 /* Scene scroll sticky */
 // ──────────────────────────────────────────────────────────────────────────────
 
-function initExperienceScenes(selector, {fadedAlpha=.35, enterDur=.8, ease='osmo-ease'}={}) {
+function initExperienceScenes(
+rootSelector = '[data-scene-root]',
+{
+  textSelector = '[data-scene-text]',
+  totalVh = 400,           // pin distance
+  fadedAlpha = 0.35,       // non-active alpha
+  enterDur = 0.9,          // highlight duration
+  ease = 'osmo-ease'       // fallback to 'power3.out' if not available
+} = {}
+) {
 if (typeof gsap==='undefined' || typeof ScrollTrigger==='undefined') return;
 
-document.querySelectorAll(selector).forEach(root => {
-const texts = gsap.utils.toArray(root.querySelectorAll('[data-scene-text]'));
-if (!texts.length) return;
+document.querySelectorAll(rootSelector).forEach(root => {
+  const texts = gsap.utils.toArray(root.querySelectorAll(textSelector));
+  if (!texts.length) return;
 
-// Prep: stack texts and split to characters (once)
-const splits = new Map();
-const getChars = (el) => {
-if (splits.has(el)) return splits.get(el);
-let chars = el.querySelectorAll('.char'); // if already SplitText'ed elsewhere
-if (!chars.length && typeof SplitText !== 'undefined') {
-const s = new SplitText(el, { type: 'chars', reduceWhiteSpace: false });
-chars = s.chars;
-}
-chars = Array.from(chars);
-splits.set(el, chars);
-return chars;
-};
+  // derive segments from totalVh so each 100vh == 1 step
+  const segments = Math.max(1, Math.round(totalVh / 100));
 
-texts.forEach((t,i) => {
-t.style.position = 'absolute';
-t.style.inset = '0';
-t.style.willChange = 'opacity, transform';
-const chars = getChars(t);
-gsap.set(chars.length ? chars : t, { autoAlpha: i===0 ? 1 : fadedAlpha, y: i===0 ? 0 : 0 });
-t.classList.toggle('is-active', i===0);
-});
+  // helper to get characters (prefers SplitText; falls back to aria-hidden leaves; else whole node)
+  const getChars = (el) => {
+    if (el.__chars) return el.__chars;
+    let chars = [];
+    // 1) if SplitText exists, split once
+    if (typeof SplitText !== 'undefined') {
+      const s = new SplitText(el, { type: 'chars', reduceWhiteSpace: false });
+      chars = s.chars || [];
+    } else {
+      // 2) use your existing aria-hidden leaves if present
+      const leaves = el.querySelectorAll('[aria-hidden="true"]');
+      chars = Array.from(leaves).filter(node => !node.children.length);
+    }
+    // 3) fallback to the element itself
+    if (!chars.length) chars = [el];
+    el.__chars = chars;
+    return chars;
+  };
 
-let activeIndex = 0;
-let playingTL = null;
+  // prime states: first is highlighted, others dim
+  texts.forEach((t, i) => {
+    const chars = getChars(t);
+    if (i === 0) {
+      gsap.set(chars, { autoAlpha: 1 });
+      t.classList.add('is-active');
+    } else {
+      gsap.set(chars, { autoAlpha: fadedAlpha });
+      t.classList.remove('is-active');
+    }
+  });
 
-function highlightIn(el){
-const chars = getChars(el);
-if (playingTL) playingTL.kill();
-// reset target to dim state first
-if (chars.length) gsap.set(chars, { autoAlpha: fadedAlpha });
-else gsap.set(el, { autoAlpha: fadedAlpha });
+  let activeIndex = 0;
+  let tlPlaying = null;
 
-// animate to highlighted
-playingTL = gsap.timeline();
-if (chars.length) {
-playingTL.to(chars, {
- autoAlpha: 1,
- duration: enterDur,
- ease,
- stagger: 0.02
-});
-} else {
-playingTL.to(el, { autoAlpha: 1, duration: enterDur, ease });
-}
-}
+  const highlightIn = (el) => {
+    const chars = getChars(el);
+    if (tlPlaying) tlPlaying.kill();
+    gsap.set(chars, { autoAlpha: fadedAlpha });
+    tlPlaying = gsap.to(chars, {
+      autoAlpha: 1,
+      duration: enterDur,
+      ease: (typeof CustomEase!=='undefined' ? ease : 'power3.out'),
+      stagger: 0.02,
+      overwrite: 'auto'
+    });
+  };
 
-function dimOut(el){
-const chars = getChars(el);
-if (chars.length) gsap.to(chars, { autoAlpha: fadedAlpha, duration: 0.35, ease: 'linear', overwrite: 'auto' });
-else gsap.to(el, { autoAlpha: fadedAlpha, duration: 0.35, ease: 'linear', overwrite: 'auto' });
-}
+  const dimOut = (el) => {
+    const chars = getChars(el);
+    gsap.to(chars, { autoAlpha: fadedAlpha, duration: 0.35, ease: 'linear', overwrite: 'auto' });
+  };
 
-function setScene(i){
-i = Math.max(0, Math.min(texts.length - 1, i));
-if (i === activeIndex) return;
-dimOut(texts[activeIndex]);
-texts[activeIndex].classList.remove('is-active');
+  const setActive = (i) => {
+    i = Math.max(0, Math.min(texts.length - 1, i));
+    if (i === activeIndex) return;
+    dimOut(texts[activeIndex]);
+    texts[activeIndex].classList.remove('is-active');
+    activeIndex = i;
+    texts[activeIndex].classList.add('is-active');
+    highlightIn(texts[activeIndex]);
+  };
 
-activeIndex = i;
-texts[activeIndex].classList.add('is-active');
-highlightIn(texts[activeIndex]);
-}
-
-// Determine segments from the pinned distance; default to 400vh => 4 segments (100vh each)
-const SEGMENTS = 4; // exactly one text per 100vh on a 400vh section
-// If you ever vary the height, you can compute: Math.max(1, Math.round(root.clientHeight / window.innerHeight))
-
-ScrollTrigger.create({
-trigger: root,
-start: 'top top',
-end: '+=' + (SEGMENTS * 100) + 'vh', // 400vh total
-pin: true,
-scrub: true,
-snap: 1/(SEGMENTS-1), // snap at every 100vh
-onUpdate(self){
-// Map progress (0..1) to segment index 0..SEGMENTS-1
-const raw = self.progress * (SEGMENTS - 1);
-const segIndex = Math.round(raw);
-// If you have fewer texts than segments, clamp by texts.length
-const targetIndex = Math.min(texts.length - 1, segIndex);
-if (targetIndex !== activeIndex) setScene(targetIndex);
-},
-onEnter() {
-// ensure first is highlighted
-highlightIn(texts[0]);
-}
-});
+  // Pin the section and step every 100vh
+  ScrollTrigger.create({
+    trigger: root,
+    start: 'top top',
+    end: `+=${totalVh}vh`,
+    pin: true,
+    scrub: true,
+    snap: segments > 1 ? 1 / (segments - 1) : false,
+    onEnter() { highlightIn(texts[0]); },
+    onUpdate(self) {
+      // progress [0..1] → segment index [0..segments-1] → clamp to number of texts
+      const segIndex = Math.round(self.progress * (segments - 1));
+      setActive(Math.min(texts.length - 1, segIndex));
+    }
+  });
 });
 }
-
