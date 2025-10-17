@@ -67,39 +67,39 @@ requestAnimationFrame(() => ScrollTrigger.refresh());
 // ──────────────────────────────────────────────────────────────────────────────
 // Highlight Text on Scroll
 // ──────────────────────────────────────────────────────────────────────────────
-function initHighlightText(){
+function initHighlightText() {
 if (typeof SplitText === 'undefined' || typeof gsap === 'undefined') return;
 
 const splitHeadingTargets = document.querySelectorAll('[data-highlight-text]');
 if (!splitHeadingTargets.length) return;
 
 for (const heading of splitHeadingTargets) {
-const scrollStart  = heading.getAttribute('data-highlight-scroll-start') || 'top 75%';
-const scrollEnd    = heading.getAttribute('data-highlight-scroll-end')   || 'center 30%';
-const fadedValue   = parseFloat(heading.getAttribute('data-highlight-fade'))    || 0.4;
-const staggerValue = parseFloat(heading.getAttribute('data-highlight-stagger')) || 0.2;
+  const scrollStart  = heading.getAttribute('data-highlight-scroll-start') || 'top 75%';
+  const scrollEnd    = heading.getAttribute('data-highlight-scroll-end')   || 'center 30%';
+  const fadedValue   = parseFloat(heading.getAttribute('data-highlight-fade'))    || 0.4;
+  const staggerValue = parseFloat(heading.getAttribute('data-highlight-stagger')) || 0.2;
 
-new SplitText(heading, {
-type: 'words, chars',
-autoSplit: true,
-onSplit(self) {
-const ctx = gsap.context(() => {
-gsap.timeline({
-scrollTrigger: {
-scrub: true,
-trigger: heading,
-start: scrollStart,
-end: scrollEnd,
-}
-}).from(self.chars, {
-autoAlpha: fadedValue,
-stagger: staggerValue,
-ease: 'linear'
-});
-});
-return ctx;
-}
-});
+  new SplitText(heading, {
+    type: 'words',
+    autoSplit: true,
+    onSplit(self) {
+      const ctx = gsap.context(() => {
+        gsap.timeline({
+          scrollTrigger: {
+            scrub: true,
+            trigger: heading,
+            start: scrollStart,
+            end: scrollEnd,
+          }
+        }).from(self.words, { 
+          autoAlpha: fadedValue,
+          stagger: staggerValue,
+          ease: 'linear'
+        });
+      });
+      return ctx;
+    }
+  });
 }
 }
 
@@ -788,10 +788,10 @@ lightbox.setAttribute('data-vimeo-fullscreen', 'true');
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-                   document.addEventListener(evt, () =>
-                                             lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
-                                            )
-                  );
+                 document.addEventListener(evt, () =>
+                                           lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
+                                          )
+                );
 }
 }
 
@@ -909,8 +909,8 @@ muteBtn?.addEventListener('click', () => {
 if (!player) return;
 globalMuted = !globalMuted;
 player.setVolume(globalMuted ? 0 : 1).then(() =>
-      lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
-     );
+    lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
+   );
 });
 
 openButtons.forEach(btn => {
@@ -1365,8 +1365,8 @@ window.addEventListener('resize', onResize);
 const imgLoad = () => {
 const imgs = container.querySelectorAll('img');
 return Promise.all(Array.from(imgs).map(img =>
-     (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
-    ));
+   (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
+  ));
 };
 
 // When images are ready, set the layout
@@ -1977,52 +1977,52 @@ wraps.forEach(wrap => {
 const headings = Array.from(wrap.querySelectorAll('[data-sticky-title="heading"]'));
 
 const masterTl = gsap.timeline({
-  scrollTrigger: {
-    trigger: wrap,
-    start: "top 40%",
-    end: "bottom bottom",
-    scrub: true,
-  }
+scrollTrigger: {
+  trigger: wrap,
+  start: "top 40%",
+  end: "bottom bottom",
+  scrub: true,
+}
 });
 
 const revealDuration = 0.7,
-      fadeOutDuration = 0.7,
-      overlapOffset = 0.15;
+    fadeOutDuration = 0.7,
+    overlapOffset = 0.15;
 
 headings.forEach((heading, index) => {
-  // Save original heading content for screen readers
-  heading.setAttribute("aria-label", heading.textContent);
-  
-  const split = new SplitText(heading, { type: "words,chars" });
-  
-  // Hide all the separate words from screenreader
-  split.words.forEach(word => word.setAttribute("aria-hidden", "true"));
-  
-  // Reset visibility on the 'stacked' headings
-  gsap.set(heading, { visibility: "visible" });
-  
-  const headingTl = gsap.timeline();
-  headingTl.from(split.chars, {
+// Save original heading content for screen readers
+heading.setAttribute("aria-label", heading.textContent);
+
+const split = new SplitText(heading, { type: "words,chars" });
+
+// Hide all the separate words from screenreader
+split.words.forEach(word => word.setAttribute("aria-hidden", "true"));
+
+// Reset visibility on the 'stacked' headings
+gsap.set(heading, { visibility: "visible" });
+
+const headingTl = gsap.timeline();
+headingTl.from(split.chars, {
+  autoAlpha: 0,
+  stagger: { amount: revealDuration, from: "start" },
+  duration: revealDuration
+});
+
+// Animate fade-out for every heading except the last one.
+if (index < headings.length - 1) {
+  headingTl.to(split.chars, {
     autoAlpha: 0,
-    stagger: { amount: revealDuration, from: "start" },
-    duration: revealDuration
+    stagger: { amount: fadeOutDuration, from: "end" },
+    duration: fadeOutDuration
   });
-  
-  // Animate fade-out for every heading except the last one.
-  if (index < headings.length - 1) {
-    headingTl.to(split.chars, {
-      autoAlpha: 0,
-      stagger: { amount: fadeOutDuration, from: "end" },
-      duration: fadeOutDuration
-    });
-  }
-  
-  // Overlap the start of fade-in of the new heading a little bit
-  if (index === 0) {
-    masterTl.add(headingTl);
-  } else {
-    masterTl.add(headingTl, `-=${overlapOffset}`);
-  }
+}
+
+// Overlap the start of fade-in of the new heading a little bit
+if (index === 0) {
+  masterTl.add(headingTl);
+} else {
+  masterTl.add(headingTl, `-=${overlapOffset}`);
+}
 });
 });
 }
