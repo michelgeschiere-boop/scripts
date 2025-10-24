@@ -38,13 +38,9 @@ gsap?.ticker.add((time) => { lenis.raf(time * 1000); });
 // ── Inits (order matters a bit because some refresh ScrollTrigger) ──────────
 initHighlightText();
 initGlobalParallax();
-initStackingCardsParallax();
-//initStackedCardsSlider();
 initGlowingInteractiveDotsGrid();
 initDynamicCurrentYear();
 initVimeoLightboxAdvanced();
-initButtonOffsetSmoothScroll();
-initStickyFeatures();
 initBasicFilterSetupMultiMatch();
 initContentRevealScroll();
 initMasonryGrid();
@@ -55,7 +51,6 @@ initCopyEmailClipboard();
 initCustomSubmitButton();
 initMobileNavMenu();
 initThemedSVGCursor();
-initStickyTitleScroll();
 
 // One refresh after all ScrollTriggers are created
 if (typeof ScrollTrigger !== 'undefined') {
@@ -74,32 +69,32 @@ const splitHeadingTargets = document.querySelectorAll('[data-highlight-text]');
 if (!splitHeadingTargets.length) return;
 
 for (const heading of splitHeadingTargets) {
-  const scrollStart  = heading.getAttribute('data-highlight-scroll-start') || 'top 90%';
-  const scrollEnd    = heading.getAttribute('data-highlight-scroll-end')   || 'center 40%';
-  const fadedValue   = parseFloat(heading.getAttribute('data-highlight-fade'))    || 0.4;
-  const staggerValue = parseFloat(heading.getAttribute('data-highlight-stagger')) || 0.1;
+const scrollStart  = heading.getAttribute('data-highlight-scroll-start') || 'top 90%';
+const scrollEnd    = heading.getAttribute('data-highlight-scroll-end')   || 'center 40%';
+const fadedValue   = parseFloat(heading.getAttribute('data-highlight-fade'))    || 0.4;
+const staggerValue = parseFloat(heading.getAttribute('data-highlight-stagger')) || 0.1;
 
-  new SplitText(heading, {
-    type: 'words',
-    autoSplit: true,
-    onSplit(self) {
-      const ctx = gsap.context(() => {
-        gsap.timeline({
-          scrollTrigger: {
-            scrub: true,
-            trigger: heading,
-            start: scrollStart,
-            end: scrollEnd,
-          }
-        }).from(self.words, { 
-          autoAlpha: fadedValue,
-          stagger: staggerValue,
-          ease: 'linear'
-        });
+new SplitText(heading, {
+  type: 'words',
+  autoSplit: true,
+  onSplit(self) {
+    const ctx = gsap.context(() => {
+      gsap.timeline({
+        scrollTrigger: {
+          scrub: true,
+          trigger: heading,
+          start: scrollStart,
+          end: scrollEnd,
+        }
+      }).from(self.words, { 
+        autoAlpha: fadedValue,
+        stagger: staggerValue,
+        ease: 'linear'
       });
-      return ctx;
-    }
-  });
+    });
+    return ctx;
+  }
+});
 }
 }
 
@@ -231,203 +226,6 @@ if (!ticking) { requestAnimationFrame(raf); ticking = true; }
 
 document.addEventListener('pointerleave', () => setZone(false), { passive: true });
 }
-
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Stacking Cards Parallax
-// ──────────────────────────────────────────────────────────────────────────────
-function initStackingCardsParallax(){
-if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-
-const cards = document.querySelectorAll('[data-stacking-cards-item]');
-if (cards.length < 2) return;
-
-cards.forEach((card, i) => {
-if (i === 0) return;
-
-const previousCard = cards[i - 1];
-if (!previousCard) return;
-
-const previousCardImage = previousCard.querySelector('[data-stacking-cards-img]');
-
-gsap.timeline({
-defaults: { ease: 'none', duration: 1 },
-scrollTrigger: {
-trigger: card,
-start: 'top bottom',
-end: 'top top',
-scrub: true,
-invalidateOnRefresh: true
-}
-})
-.fromTo(previousCard, { yPercent: 0 }, { yPercent: 50 })
-.fromTo(previousCardImage, { rotate: 0, yPercent: 0 }, { rotate: -5, yPercent: -25 }, '<');
-});
-}
-
-/* ──────────────────────────────────────────────────────────────────────────────
-// Stacked Cards Slider (Draggable)
-// ──────────────────────────────────────────────────────────────────────────────
-function initStackedCardsSlider() {
-if (typeof Draggable === 'undefined' || typeof gsap === 'undefined') return;
-
-document.querySelectorAll('[data-stacked-cards]').forEach((container) => {
-const list = container.querySelector('[data-stacked-cards-list]');
-if (!list) return;
-
-let dragFirst, dragSecond;
-let firstItem, secondItem, firstEl, secondEl;
-let full, t;
-
-const easeBeforeRelease = { duration: 0.2, ease: 'power2.out' };
-const easeAfterRelease  = { duration: 1,   ease: 'elastic.out(1,0.75)' };
-let activeDeg = 4, inactiveDeg = -4;
-
-function restack() {
-const items = Array.from(list.querySelectorAll('[data-stacked-cards-item]'));
-if (items.length < 3) return;
-
-items.forEach((item) => item.classList.remove('is--active', 'is--second'));
-
-items[0].style.zIndex = 3;
-items[0].style.transform = `rotate(${activeDeg}deg)`;
-items[0].style.pointerEvents = 'auto';
-items[0].classList.add('is--active');
-
-items[1].style.zIndex = 2;
-items[1].style.transform = `rotate(${inactiveDeg}deg)`;
-items[1].style.pointerEvents = 'none';
-items[1].classList.add('is--second');
-
-if (items[2]) {
-items[2].style.zIndex = 1;
-items[2].style.transform = `rotate(${activeDeg}deg)`;
-}
-
-for (let i = 3; i < items.length; i++) {
-items[i].style.zIndex = 0;
-items[i].style.transform = `rotate(${inactiveDeg}deg)`;
-}
-}
-
-function setupDraggables() {
-restack();
-
-const items = Array.from(list.querySelectorAll(':scope > [data-stacked-cards-item]'));
-if (items.length < 2) return;
-
-firstItem  = items[0];
-secondItem = items[1];
-firstEl    = firstItem.querySelector('[data-stacked-cards-card]');
-secondEl   = secondItem.querySelector('[data-stacked-cards-card]');
-if (!firstEl || !secondEl) return;
-
-const width = firstEl.getBoundingClientRect().width || 0;
-full = width * 1.15;
-t    = width * 0.1;
-
-dragFirst?.kill();
-dragSecond?.kill();
-
-dragFirst = Draggable.create(firstEl, {
-type: 'x',
-onPress()   { firstEl.classList.add('is--dragging'); },
-onRelease() { firstEl.classList.remove('is--dragging'); },
-onDrag() {
-let raw = this.x;
-if (Math.abs(raw) > full) {
-const over = Math.abs(raw) - full;
-raw = (raw > 0 ? 1 : -1) * (full + over * 0.1);
-}
-gsap.set(firstEl, { x: raw, rotation: 0 });
-},
-onDragEnd() {
-const x = this.x;
-const dir = x > 0 ? 'right' : 'left';
-
-this.disable?.();
-dragSecond?.enable?.();
-firstItem.style.pointerEvents = 'none';
-secondItem.style.pointerEvents = 'auto';
-
-if (Math.abs(x) <= t) {
-gsap.to(firstEl, { x: 0, rotation: 0, ...easeBeforeRelease, onComplete: resetCycle });
-} else if (Math.abs(x) <= full) {
-flick(dir, false, x);
-} else {
-flick(dir, true);
-}
-}
-})[0];
-
-dragSecond = Draggable.create(secondEl, {
-type: 'x',
-onPress()   { secondEl.classList.add('is--dragging'); },
-onRelease() { secondEl.classList.remove('is--dragging'); },
-onDrag() {
-let raw = this.x;
-if (Math.abs(raw) > full) {
-const over = Math.abs(raw) - full;
-raw = (raw > 0 ? 1 : -1) * (full + over * 0.2);
-}
-gsap.set(secondEl, { x: raw, rotation: 0 });
-},
-onDragEnd() {
-gsap.to(secondEl, { x: 0, rotation: 0, ...easeBeforeRelease });
-}
-})[0];
-
-dragFirst?.enable?.();
-dragSecond?.disable?.();
-firstItem.style.pointerEvents = 'auto';
-secondItem.style.pointerEvents = 'none';
-}
-
-function flick(dir, skipHome = false, releaseX = 0) {
-if (!(dir === 'left' || dir === 'right')) dir = activeDeg > 0 ? 'right' : 'left';
-dragFirst?.disable?.();
-
-const item = list.querySelector('[data-stacked-cards-item]');
-const card = item?.querySelector('[data-stacked-cards-card]');
-if (!item || !card) return;
-const exitX = dir === 'right' ? full : -full;
-
-if (skipHome) {
-const visualX = gsap.getProperty(card, 'x');
-list.appendChild(item);
-[activeDeg, inactiveDeg] = [inactiveDeg, activeDeg];
-restack();
-gsap.fromTo(card, { x: visualX, rotation: 0 }, { x: 0, rotation: 0, ...easeAfterRelease, onComplete: resetCycle });
-} else {
-gsap.fromTo(card, { x: releaseX, rotation: 0 }, {
-x: exitX, ...easeBeforeRelease,
-onComplete() {
-gsap.set(card, { x: 0, rotation: 0 });
-list.appendChild(item);
-[activeDeg, inactiveDeg] = [inactiveDeg, activeDeg];
-resetCycle();
-const newCard = item.querySelector('[data-stacked-cards-card]');
-if (newCard) gsap.fromTo(newCard, { x: exitX }, { x: 0, ...easeAfterRelease, onComplete: resetCycle });
-}
-});
-}
-}
-
-function resetCycle() {
-list.querySelectorAll('[data-stacked-cards-card].is--dragging')
-.forEach((el) => el.classList.remove('is--dragging'));
-setupDraggables();
-}
-
-setupDraggables();
-
-container.querySelectorAll('[data-stacked-cards-control="next"]').forEach((btn) => {
-btn.addEventListener('click', () => flick());
-});
-});
-}
-
-*/
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Glowing Interactive Dots Grid (hover-only interactivity)
@@ -788,10 +586,10 @@ lightbox.setAttribute('data-vimeo-fullscreen', 'true');
 }
 });
 ['fullscreenchange','webkitfullscreenchange'].forEach(evt =>
-                 document.addEventListener(evt, () =>
-                                           lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
-                                          )
-                );
+               document.addEventListener(evt, () =>
+                                         lightbox.setAttribute('data-vimeo-fullscreen', (document.fullscreenElement || document.webkitFullscreenElement) ? 'true' : 'false')
+                                        )
+              );
 }
 }
 
@@ -909,8 +707,8 @@ muteBtn?.addEventListener('click', () => {
 if (!player) return;
 globalMuted = !globalMuted;
 player.setVolume(globalMuted ? 0 : 1).then(() =>
-    lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
-   );
+  lightbox.setAttribute('data-vimeo-muted', globalMuted ? 'true' : 'false')
+ );
 });
 
 openButtons.forEach(btn => {
@@ -918,140 +716,6 @@ btn.addEventListener('click', () => {
 const vid = btn.getAttribute('data-vimeo-lightbox-id');
 const img = btn.querySelector('[data-vimeo-lightbox-placeholder]');
 if (vid) openLightbox(vid, img);
-});
-});
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Always scroll 6em further down when a link has [data-button-offset]
-// ──────────────────────────────────────────────────────────────────────────────
-function initButtonOffsetSmoothScroll() {
-const SIX_EM = 6 * parseFloat(getComputedStyle(document.documentElement).fontSize);
-
-document.addEventListener('click', onClick, { passive: false });
-
-function onClick(e) {
-const btn = e.target.closest('[data-button-offset]');
-if (!btn) return;
-
-const href = btn.getAttribute('href') || '';
-const id = href.includes('#') ? href.split('#')[1] : '';
-if (!id) return;
-
-const target = document.getElementById(id) || document.getElementsByName(id)[0];
-if (!target) return;
-
-e.preventDefault();
-
-// Compute absolute Y, add fixed 6em
-const rect = target.getBoundingClientRect();
-let y = window.scrollY + rect.top + SIX_EM;
-
-// Clamp within page bounds
-const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-if (y > max) y = max;
-if (y < 0) y = 0;
-
-// Use Lenis if present; fallback to native
-if (window.lenis && typeof window.lenis.scrollTo === 'function') {
-window.lenis.scrollTo(y);
-} else {
-window.scrollTo({ top: y, behavior: 'smooth' });
-}
-
-// Update hash without native jump
-if (target.id) history.pushState(null, '', `#${encodeURIComponent(target.id)}`);
-}
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Sticky Features
-// ──────────────────────────────────────────────────────────────────────────────
-function initStickyFeatures(root){
-if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-
-const wraps = Array.from((root || document).querySelectorAll('[data-sticky-feature-wrap]'));
-if (!wraps.length) return;
-
-wraps.forEach(w => {
-const visualWraps = Array.from(w.querySelectorAll('[data-sticky-feature-visual-wrap]'));
-const items       = Array.from(w.querySelectorAll('[data-sticky-feature-item]'));
-const progressBar = w.querySelector('[data-sticky-feature-progress]');
-
-const count = Math.min(visualWraps.length, items.length);
-if (count < 1) return;
-
-const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const DURATION = rm ? 0.01 : 0.75;
-const EASE     = 'power4.inOut';
-const SCROLL_AMOUNT = 0.9;
-
-const getTexts = el => Array.from(el.querySelectorAll('[data-sticky-feature-text]'));
-
-visualWraps[0] && gsap.set(visualWraps[0], { clipPath: 'inset(0% round 0.75em)' });
-gsap.set(items[0], { autoAlpha: 1 });
-
-let currentIndex = 0;
-
-function transition(fromIndex, toIndex){
-if (fromIndex === toIndex) return;
-const tl = gsap.timeline({ defaults: { overwrite: 'auto' } });
-
-if (fromIndex < toIndex){
-tl.to(visualWraps[toIndex], { clipPath: 'inset(0% round 0.75em)', duration: DURATION, ease: EASE }, 0);
-} else {
-tl.to(visualWraps[fromIndex], { clipPath: 'inset(50% round 0.75em)', duration: DURATION, ease: EASE }, 0);
-}
-animateOut(items[fromIndex]);
-animateIn(items[toIndex]);
-}
-
-function animateOut(itemEl){
-const texts = getTexts(itemEl);
-gsap.to(texts, {
-autoAlpha: 0,
-y: -30,
-ease: 'power4.out',
-duration: 0.4,
-onComplete: () => gsap.set(itemEl, { autoAlpha: 0 })
-});
-}
-
-function animateIn(itemEl){
-const texts = getTexts(itemEl);
-gsap.set(itemEl, { autoAlpha: 1 });
-gsap.fromTo(texts, { autoAlpha: 0, y: 30 }, {
-autoAlpha: 1,
-y: 0,
-ease: 'power4.out',
-duration: DURATION,
-stagger: 0.1
-});
-}
-
-const steps = Math.max(1, count - 1);
-
-ScrollTrigger.create({
-trigger: w,
-start: 'center center',
-end: () => `+=${steps * 100}%`,
-pin: true,
-scrub: true,
-invalidateOnRefresh: true,
-onUpdate: self => {
-const p = Math.min(self.progress, SCROLL_AMOUNT) / SCROLL_AMOUNT;
-let idx = Math.floor(p * steps + 1e-6);
-idx = Math.max(0, Math.min(steps, idx));
-
-if (progressBar) {
-gsap.to(progressBar, { scaleX: p, ease: 'none' });
-}
-
-if (idx !== currentIndex) {
-transition(currentIndex, idx);
-currentIndex = idx;
-}
-}
 });
 });
 }
@@ -1365,8 +1029,8 @@ window.addEventListener('resize', onResize);
 const imgLoad = () => {
 const imgs = container.querySelectorAll('img');
 return Promise.all(Array.from(imgs).map(img =>
-   (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
-  ));
+ (img.complete && img.naturalWidth) ? Promise.resolve() : new Promise(r => img.addEventListener('load', r, { once: true }))
+));
 };
 
 // When images are ready, set the layout
@@ -1961,69 +1625,6 @@ triggers.forEach(btn => btn.addEventListener('click', toggle));
 
 window.addEventListener('resize', () => {
 if (!isMobile()) setState(false);
-});
-}
-
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Scene scroll sticky: highlight one paragraph per 100vh
-// ──────────────────────────────────────────────────────────────────────────────
-gsap.registerPlugin(ScrollTrigger, SplitText)
-
-function initStickyTitleScroll() {
-const wraps = document.querySelectorAll('[data-sticky-title="wrap"]');
-
-wraps.forEach(wrap => {
-const headings = Array.from(wrap.querySelectorAll('[data-sticky-title="heading"]'));
-
-const masterTl = gsap.timeline({
-scrollTrigger: {
-  trigger: wrap,
-  start: "top 40%",
-  end: "bottom bottom",
-  scrub: true,
-}
-});
-
-const revealDuration = 0.7,
-    fadeOutDuration = 0.7,
-    overlapOffset = 0.15;
-
-headings.forEach((heading, index) => {
-// Save original heading content for screen readers
-heading.setAttribute("aria-label", heading.textContent);
-
-const split = new SplitText(heading, { type: "words,chars" });
-
-// Hide all the separate words from screenreader
-split.words.forEach(word => word.setAttribute("aria-hidden", "true"));
-
-// Reset visibility on the 'stacked' headings
-gsap.set(heading, { visibility: "visible" });
-
-const headingTl = gsap.timeline();
-headingTl.from(split.chars, {
-  autoAlpha: 0,
-  stagger: { amount: revealDuration, from: "start" },
-  duration: revealDuration
-});
-
-// Animate fade-out for every heading except the last one.
-if (index < headings.length - 1) {
-  headingTl.to(split.chars, {
-    autoAlpha: 0,
-    stagger: { amount: fadeOutDuration, from: "end" },
-    duration: fadeOutDuration
-  });
-}
-
-// Overlap the start of fade-in of the new heading a little bit
-if (index === 0) {
-  masterTl.add(headingTl);
-} else {
-  masterTl.add(headingTl, `-=${overlapOffset}`);
-}
-});
 });
 }
 
