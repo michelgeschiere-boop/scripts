@@ -282,9 +282,13 @@ window.destroyThemedSVGCursor = () => {
 }
 
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Glowing Interactive Dots Grid (no hole, same UX, lighter DOM)
+// ──────────────────────────────────────────────────────────────────────────────
 function initGlowingInteractiveDotsGrid() {
   if (typeof gsap === 'undefined') return;
 
+  // Only run on hover-capable pointers
   const supportsHoverFine = !!(window.matchMedia &&
     window.matchMedia('(hover: hover) and (pointer: fine)').matches);
 
@@ -298,32 +302,35 @@ function initGlowingInteractiveDotsGrid() {
   }
 
   document.querySelectorAll('[data-dots-container-init]').forEach(container => {
+    // Config (same feel as original)
     const colors         = { base: '#ffffff0d', active: '#ffffff' };
-    const threshold      = 200;
-    const speedThreshold = 100;
-    const shockRadius    = 325;
-    const shockPower     = 5;
-    const maxSpeed       = 5000;
-    const centerHole     = true;
+    const threshold      = 200;     // hover influence radius (px)
+    const speedThreshold = 100;     // inertia trigger (px/s)
+    const shockRadius    = 325;     // click shock radius (px)
+    const shockPower     = 5;       // click push power
+    const maxSpeed       = 5000;    // cap mouse speed (px/s)
 
+    // Desktop density caps (can override via data-attrs)
     const MAX_COLS = parseInt(container.getAttribute('data-dots-max-cols')) || 20;
     const MAX_ROWS = parseInt(container.getAttribute('data-dots-max-rows')) || 9;
 
+    // Use your existing template SVG (eyes)
     const svgTemplate = container.querySelector('.dot-svg') || document.querySelector('.dot-svg');
 
-    let dots = [];
-    let centers = [];
-    let hash = new Map();
+    // State
+    let dots = [];             // array of <div.dot>
+    let centers = [];          // [{el,x,y}]
+    let hash = new Map();      // spatial hash for proximity queries
     const cellSize = threshold;
 
     const keyFor = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
-    const indexIntoHash = (i, x, y) => {
+    function indexIntoHash(i, x, y) {
       const k = keyFor(x, y);
       const arr = hash.get(k) || [];
       if (!arr.length) hash.set(k, arr);
       arr.push(i);
-    };
-    const getNearbyIndices = (x, y) => {
+    }
+    function getNearbyIndices(x, y) {
       const cx = Math.floor(x / cellSize);
       const cy = Math.floor(y / cellSize);
       const out = [];
@@ -334,64 +341,54 @@ function initGlowingInteractiveDotsGrid() {
         }
       }
       return out;
-    };
+    }
 
-    const tintDot = (el, color) => gsap.set(el, { color });
+    // Fast tint (SVG follows currentColor)
+    function tintDot(el, color) {
+      el.style.color = color;
+    }
 
+    // Build grid (no hole)
     function buildGrid() {
       container.innerHTML = '';
       dots = [];
       centers = [];
       hash.clear();
 
-      const style = getComputedStyle(container);
-      const dotPx = parseFloat(style.fontSize) || 10;
-      const gapPx = dotPx * 2;
-      const contW = container.clientWidth;
-      const contH = container.clientHeight;
+      const cs = getComputedStyle(container);
+      const dotPx = parseFloat(cs.fontSize) || 10;      // dot size uses font-size
+      const gapPx = dotPx * 2;                          // spacing
+      const contW = container.clientWidth || 300;
+      const contH = container.clientHeight || 180;
 
-      let cols = Math.min(Math.floor((contW + gapPx) / (dotPx + gapPx)), MAX_COLS);
-      let rows = Math.min(Math.floor((contH + gapPx) / (dotPx + gapPx)), MAX_ROWS);
+      let cols = Math.floor((contW + gapPx) / (dotPx + gapPx));
+      let rows = Math.floor((contH + gapPx) / (dotPx + gapPx));
+      cols = Math.max(2, Math.min(cols, MAX_COLS));
+      rows = Math.max(2, Math.min(rows, MAX_ROWS));
       const total = cols * rows;
-
-      // proportional smaller hole
-      const holeCols = centerHole ? Math.max(2, Math.round(cols / 5)) : 0;
-      const holeRows = centerHole ? Math.max(2, Math.round(rows / 5)) : 0;
-      const startCol = Math.floor((cols - holeCols) / 2);
-      const startRow = Math.floor((rows - holeRows) / 2);
 
       const frag = document.createDocumentFragment();
 
       for (let i = 0; i < total; i++) {
-        const row = Math.floor(i / cols);
-        const col = i % cols;
-        const isHole =
-          centerHole &&
-          row >= startRow && row < startRow + holeRows &&
-          col >= startCol && col < startCol + holeCols;
-
         const d = document.createElement('div');
         d.className = 'dot';
         d.style.willChange = 'transform';
         d.style.color = colors.base;
 
-        if (isHole) {
-          d.style.visibility = 'hidden';
-          d._isHole = true;
-        } else if (svgTemplate) {
+        if (svgTemplate) {
           const svg = svgTemplate.cloneNode(true);
           svg.style.display = '';
           svg.setAttribute('aria-hidden', 'true');
           d.appendChild(svg);
-          d._hasSvg = true;
         }
 
         frag.appendChild(d);
-        if (!d._isHole) dots.push(d);
+        dots.push(d);
       }
 
       container.appendChild(frag);
 
+      // Measure centers & build hash (cheap: capped DOM)
       requestAnimationFrame(() => {
         centers = dots.map(el => {
           const r = el.getBoundingClientRect();
@@ -406,31 +403,34 @@ function initGlowingInteractiveDotsGrid() {
     window.addEventListener('resize', () => buildGrid(), { passive: true });
     buildGrid();
 
-    if (typeof InertiaPlugin === 'undefined') return;
-
+    // Interactivity (same pattern as original: window listeners)
     let lastTime = 0, lastX = 0, lastY = 0;
-    window.addEventListener('mousemove', e => {
+
+    window.addEventListener('mousemove', (e) => {
       const now = performance.now();
-      const dt = now - lastTime || 16;
+      const dt  = now - lastTime || 16;
       let vx = (e.pageX - lastX) / dt * 1000;
       let vy = (e.pageY - lastY) / dt * 1000;
       let speed = Math.hypot(vx, vy);
-      if (speed > maxSpeed) {
-        const s = maxSpeed / speed;
-        vx *= s; vy *= s; speed = maxSpeed;
-      }
+      if (speed > maxSpeed) { const s = maxSpeed / speed; vx *= s; vy *= s; speed = maxSpeed; }
       lastTime = now; lastX = e.pageX; lastY = e.pageY;
 
       const nearby = getNearbyIndices(e.pageX, e.pageY);
+      if (!nearby.length) return;
+
       requestAnimationFrame(() => {
         for (const i of nearby) {
           const c = centers[i];
           const el = c.el;
           const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
           if (dist > threshold) { tintDot(el, colors.base); continue; }
+
+          // Glow
           const t = 1 - dist / threshold;
           tintDot(el, gsap.utils.interpolate(colors.base, colors.active, t));
-          if (speed > speedThreshold && !el._inertiaApplied) {
+
+          // Inertia push (if plugin is present)
+          if (typeof InertiaPlugin !== 'undefined' && speed > speedThreshold && !el._inertiaApplied) {
             el._inertiaApplied = true;
             const pushX = (c.x - e.pageX) + vx * 0.005;
             const pushY = (c.y - e.pageY) + vy * 0.005;
@@ -446,29 +446,55 @@ function initGlowingInteractiveDotsGrid() {
       });
     }, { passive: true });
 
-    window.addEventListener('click', e => {
+    window.addEventListener('click', (e) => {
       const nearby = getNearbyIndices(e.pageX, e.pageY);
+      if (!nearby.length) return;
+
       for (const i of nearby) {
         const c = centers[i];
         const el = c.el;
         const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
         if (dist >= shockRadius || el._inertiaApplied) continue;
+
         el._inertiaApplied = true;
         const falloff = 1 - dist / shockRadius;
-        const pushX = (c.x - e.pageX) * shockPower * falloff;
-        const pushY = (c.y - e.pageY) * shockPower * falloff;
-        gsap.to(el, {
-          inertia: { x: pushX, y: pushY, resistance: 750 },
-          onComplete() {
-            gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-            el._inertiaApplied = false;
-          }
-        });
+        const pushX   = (c.x - e.pageX) * shockPower * falloff;
+        const pushY   = (c.y - e.pageY) * shockPower * falloff;
+
+        if (typeof InertiaPlugin !== 'undefined') {
+          gsap.to(el, {
+            inertia: { x: pushX, y: pushY, resistance: 750 },
+            onComplete() {
+              gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
+              el._inertiaApplied = false;
+            }
+          });
+        } else {
+          // lightweight fallback if InertiaPlugin isn’t present
+          gsap.to(el, { x: pushX, y: pushY, duration: 0.18, ease: 'power2.out' })
+             .then(() => gsap.to(el, { x: 0, y: 0, duration: 0.9, ease: 'power3.out',
+               onComplete: () => { el._inertiaApplied = false; } }));
+        }
       }
+    }, { passive: true });
+
+    // Recompute centers after layout shifts
+    let scrollTO;
+    window.addEventListener('scroll', () => {
+      clearTimeout(scrollTO);
+      scrollTO = setTimeout(() => {
+        centers = dots.map(el => {
+          const r = el.getBoundingClientRect();
+          const x = r.left + window.scrollX + r.width / 2;
+          const y = r.top  + window.scrollY + r.height / 2;
+          return { el, x, y };
+        });
+        hash.clear();
+        centers.forEach((c, i) => indexIntoHash(i, c.x, c.y));
+      }, 120);
     }, { passive: true });
   });
 }
-
 
 
 // ──────────────────────────────────────────────────────────────────────────────
