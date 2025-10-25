@@ -283,236 +283,344 @@ window.destroyThemedSVGCursor = () => {
 
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Glowing Interactive Dots Grid (hover-only interactivity)
+// Glowing Interactive Dots Grid (optimized; same UX / far fewer DOM nodes)
 // ──────────────────────────────────────────────────────────────────────────────
 function initGlowingInteractiveDotsGrid() {
-if (typeof gsap === 'undefined') return;
+  if (typeof gsap === 'undefined') return;
 
-// Only allow on devices with hover + fine pointer (mouse/trackpad)
-const supportsHoverFine = !!(window.matchMedia &&
-window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  const supportsHoverFine = !!(window.matchMedia &&
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches);
 
-// If not supported, hard-hide the containers and bail
-if (!supportsHoverFine) {
-document.querySelectorAll('[data-dots-container-init]').forEach(el => {
-el.setAttribute('hidden', '');
-el.setAttribute('aria-hidden', 'true');
-el.style.display = 'none';
-});
-return;
+  // No hover? Hard-hide and bail (unchanged behavior)
+  if (!supportsHoverFine) {
+    document.querySelectorAll('[data-dots-container-init]').forEach(el => {
+      el.setAttribute('hidden', '');
+      el.setAttribute('aria-hidden', 'true');
+      el.style.display = 'none';
+    });
+    return;
+  }
+
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const isDesktop = () => window.matchMedia('(min-width: 992px)').matches;
+
+  document.querySelectorAll('[data-dots-container-init]').forEach(container => {
+    // ------- Config (can be overridden per-container via data-attrs) -------
+    const colors = { base: '#FFFFFF0D', active: '#FFFFFF' };
+    const threshold      = 200;        // hover influence radius
+    const speedThreshold = 100;        // inertia speed trigger
+    const shockRadius    = 325;        // click shock radius
+    const shockPower     = 5;          // click push power
+    const maxSpeed       = 5000;
+
+    // Caps (desktop)
+    const DESKTOP_MAX_ROWS  = parseInt(container.getAttribute('data-dots-max-rows-desktop'))  || 9;
+    const DESKTOP_MAX_TOTAL = parseInt(container.getAttribute('data-dots-max-total-desktop')) || 20;
+
+    // Keep original “auto” behavior for non-desktop, but still cap totals
+    const NONDESKTOP_MAX_TOTAL = parseInt(container.getAttribute('data-dots-max-total')) || 28;
+
+    const centerHole = true; // preserve your center hole for the logotype
+    const svgTemplate = container.querySelector('.dot-svg') || document.querySelector('.dot-svg');
+
+    // Optional lightweight symbol usage (if you add <symbol id="eye-icon"> in HTML)
+    const symbolId = container.getAttribute('data-dots-symbol-id') || 'eye-icon';
+    const hasSymbol = !!document.getElementById(symbolId);
+
+    // Spatial hash (smaller because fewer dots)
+    let dots = [];
+    let centers = [];
+    const cellSize = threshold;
+    const hash = new Map();
+    const keyFor = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
+    function indexIntoHash(i, x, y) {
+      const k = keyFor(x, y);
+      const arr = hash.get(k) || [];
+      if (!arr.length) hash.set(k, arr);
+      arr.push(i);
+    }
+    function getNearbyIndices(x, y) {
+      const cx = Math.floor(x / cellSize);
+      const cy = Math.floor(y / cellSize);
+      const out = [];
+      for (let oy = -1; oy <= 1; oy++) {
+        for (let ox = -1; ox <= 1; ox++) {
+          const arr = hash.get(`${cx + ox}:${cy + oy}`);
+          if (arr) out.push(...arr);
+        }
+      }
+      return out;
+    }
+
+    function tintDot(el, color) {
+      if (el._svg && el._svgFillEls?.length) {
+        el._svgFillEls.forEach(n => n.setAttribute('fill', color));
+      } else {
+        gsap.set(el, { backgroundColor: color });
+      }
+    }
+
+    // ——— Build (with sampling) ————————————————————————————————————————————
+    let ro, io; // observers
+
+    function buildGrid() {
+      // Clear previous
+      container.innerHTML = '';
+      dots = [];
+      centers = [];
+      hash.clear();
+
+      // Compute “natural” grid from container size (like original)
+      const style = getComputedStyle(container);
+      const dotPx = parseFloat(style.fontSize) || 10;
+      const gapPx = dotPx * 2;
+      const contW = container.clientWidth || 300;
+      const contH = container.clientHeight || 180;
+
+      let cols  = Math.max(2, Math.floor((contW + gapPx) / (dotPx + gapPx)));
+      let rows  = Math.max(2, Math.floor((contH + gapPx) / (dotPx + gapPx)));
+
+      // Desktop hard caps
+      if (isDesktop()) {
+        rows = Math.min(rows, DESKTOP_MAX_ROWS);
+      }
+
+      // Compute total native cells
+      const totalCells = cols * rows;
+
+      // Decide how many to actually instantiate
+      const maxTotal = isDesktop() ? DESKTOP_MAX_TOTAL : Math.min(NONDESKTOP_MAX_TOTAL, totalCells);
+
+      // Build an index list of all cells, then evenly sample to maxTotal
+      const indices = Array.from({ length: totalCells }, (_, i) => i);
+
+      // Keep a hole at center (like original). We blank out a small rectangle.
+      let holeMask = new Set();
+      if (centerHole) {
+        const holeCols = cols % 2 === 0 ? 4 : 5;
+        const holeRows = rows % 2 === 0 ? 4 : 5;
+        const startCol = Math.floor((cols - holeCols) / 2);
+        const startRow = Math.floor((rows - holeRows) / 2);
+        for (let r = startRow; r < startRow + holeRows; r++) {
+          for (let c = startCol; c < startCol + holeCols; c++) {
+            holeMask.add(r * cols + c);
+          }
+        }
+      }
+      const eligible = indices.filter(i => !holeMask.has(i));
+      const want = Math.min(maxTotal, eligible.length);
+
+      // Even sampling without heavy randomness: take every k-th item
+      const step = Math.max(1, Math.floor(eligible.length / want));
+      const picked = [];
+      for (let i = 0; i < eligible.length && picked.length < want; i += step) picked.push(eligible[i]);
+
+      const frag = document.createDocumentFragment();
+
+      // Build only the selected cells
+      picked.forEach(i => {
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+
+        const d = document.createElement('div');
+        d.className = 'dot';
+        d.style.willChange = 'transform';
+        d.style.gridRow = row + 1;
+        d.style.gridColumn = col + 1;
+
+        if (hasSymbol) {
+          // Preferred: lightweight <use> (no deep clones)
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('viewBox', '0 0 24 24');
+          svg.setAttribute('aria-hidden', 'true');
+          svg.classList.add('dot-svg');
+          const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+          use.setAttributeNS('http://www.w3.org/1999/xlink', 'href', `#${symbolId}`);
+          svg.appendChild(use);
+          d.appendChild(svg);
+          d._svg = svg;
+          d._svgFillEls = svg.querySelectorAll('[data-dot-fill],[fill],path,rect,circle,polygon,ellipse');
+        } else if (svgTemplate) {
+          // Fallback: clone your template once per dot (still limited count)
+          const svg = svgTemplate.cloneNode(true);
+          svg.style.display = '';
+          svg.setAttribute('aria-hidden', 'true');
+          d.appendChild(svg);
+          d._svg = svg;
+          const fillMarked = svg.querySelectorAll('[data-dot-fill]');
+          const withFillAttr = svg.querySelectorAll('[fill]');
+          d._svgFillEls = fillMarked.length
+            ? fillMarked
+            : (withFillAttr.length ? withFillAttr : svg.querySelectorAll('path, rect, circle, polygon, ellipse'));
+        }
+
+        tintDot(d, colors.base);
+        frag.appendChild(d);
+        dots.push({ el: d });
+      });
+
+      // Make container a lightweight grid so we don't absolutely-position every dot
+      container.style.display = 'grid';
+      container.style.gridTemplateColumns = `repeat(${cols}, ${dotPx}px)`;
+      container.style.gridTemplateRows    = `repeat(${rows}, ${dotPx}px)`;
+      container.style.gap = `${gapPx}px`;
+      container.appendChild(frag);
+
+      // Measure centers once (cheap: we have few nodes)
+      requestAnimationFrame(() => {
+        centers = dots.map(obj => {
+          const r = obj.el.getBoundingClientRect();
+          const x = r.left + window.scrollX + r.width / 2;
+          const y = r.top  + window.scrollY + r.height / 2;
+          return { el: obj.el, x, y };
+        });
+        hash.clear();
+        centers.forEach((c, i) => indexIntoHash(i, c.x, c.y));
+      });
+
+      // Observe size changes precisely
+      if (ro) ro.disconnect();
+      if ('ResizeObserver' in window) {
+        ro = new ResizeObserver(() => buildGrid());
+        ro.observe(container);
+      }
+
+      // Pause interactivity when off-screen
+      if (io) io.disconnect();
+      if ('IntersectionObserver' in window) {
+        io = new IntersectionObserver((entries) => {
+          const on = entries[0]?.isIntersecting;
+          container.setAttribute('data-dots-active', on ? 'true' : 'false');
+        }, { threshold: 0.05 });
+        io.observe(container);
+      }
+    }
+
+    buildGrid();
+
+    // Interactivity (hover & click) — unchanged logic, but scoped & throttled
+    if (!supportsHoverFine || prefersReduced) return;
+    if (typeof InertiaPlugin === 'undefined') {
+      // We'll still do “push” and return, just without inertia physics.
+    }
+
+    let lastTime = 0, lastX = 0, lastY = 0, rafId = 0;
+
+    function paintHover() {
+      rafId = 0;
+      if (container.getAttribute('data-dots-active') === 'false') return;
+
+      for (let i = 0; i < centers.length; i++) {
+        const c = centers[i];
+        const el = c.el;
+        const dx = c.x - lastX;
+        const dy = c.y - lastY;
+        const dist = Math.hypot(dx, dy);
+        if (dist > threshold) {
+          tintDot(el, colors.base);
+          continue;
+        }
+        const t = 1 - dist / threshold;
+        const col = gsap.utils.interpolate(colors.base, colors.active, t);
+        tintDot(el, col);
+      }
+    }
+
+    container.addEventListener('mousemove', (e) => {
+      const now = performance.now();
+      const dt  = now - lastTime || 16;
+      const rect = container.getBoundingClientRect();
+      lastX = e.clientX + window.scrollX;
+      lastY = e.clientY + window.scrollY;
+
+      // Velocity (used only if InertiaPlugin present)
+      let vx = (e.movementX || 0) / dt * 1000;
+      let vy = (e.movementY || 0) / dt * 1000;
+      let speed = Math.hypot(vx, vy);
+      if (speed > maxSpeed) {
+        const s = maxSpeed / speed; vx *= s; vy *= s; speed = maxSpeed;
+      }
+      lastTime = now;
+
+      // Affect only nearby via hash
+      const nearby = centers.length ? getNearbyIndices(lastX, lastY) : [];
+      if (nearby.length) {
+        for (let i = 0; i < nearby.length; i++) {
+          const c = centers[nearby[i]];
+          const el = c.el;
+          const dist = Math.hypot(c.x - lastX, c.y - lastY);
+          if (dist > threshold) continue;
+
+          if (speed > speedThreshold && typeof InertiaPlugin !== 'undefined' && !el._inertiaApplied) {
+            el._inertiaApplied = true;
+            const pushX = (c.x - lastX) + vx * 0.005;
+            const pushY = (c.y - lastY) + vy * 0.005;
+            gsap.to(el, {
+              inertia: { x: pushX, y: pushY, resistance: 750 },
+              onComplete() {
+                gsap.to(el, { x: 0, y: 0, duration: 1.2, ease: 'elastic.out(1,0.74)' });
+                el._inertiaApplied = false;
+              }
+            });
+          }
+        }
+      }
+
+      if (!rafId) rafId = requestAnimationFrame(paintHover);
+    }, { passive: true });
+
+    container.addEventListener('click', (e) => {
+      const x = e.clientX + window.scrollX;
+      const y = e.clientY + window.scrollY;
+      const nearby = centers.length ? getNearbyIndices(x, y) : [];
+      if (!nearby.length) return;
+
+      for (let i = 0; i < nearby.length; i++) {
+        const c = centers[nearby[i]];
+        const el = c.el;
+        const dist = Math.hypot(c.x - x, c.y - y);
+        if (dist >= shockRadius || el._inertiaApplied) continue;
+
+        el._inertiaApplied = true;
+        const falloff = 1 - dist / shockRadius;
+        const pushX   = (c.x - x) * shockPower * falloff;
+        const pushY   = (c.y - y) * shockPower * falloff;
+
+        if (typeof InertiaPlugin !== 'undefined') {
+          gsap.to(el, {
+            inertia: { x: pushX, y: pushY, resistance: 750 },
+            onComplete() {
+              gsap.to(el, { x: 0, y: 0, duration: 1.2, ease: 'elastic.out(1,0.74)' });
+              el._inertiaApplied = false;
+            }
+          });
+        } else {
+          // Lightweight fallback
+          gsap.to(el, { x: pushX, y: pushY, duration: 0.18, ease: 'power2.out' })
+             .then(() => gsap.to(el, { x: 0, y: 0, duration: 0.9, ease: 'power3.out', onComplete: () => { el._inertiaApplied = false; } }));
+        }
+      }
+    }, { passive: true });
+
+    // Recompute centers occasionally after scroll/layout shifts
+    let scrollTO;
+    window.addEventListener('scroll', () => {
+      clearTimeout(scrollTO);
+      scrollTO = setTimeout(() => {
+        centers = dots.map(obj => {
+          const r = obj.el.getBoundingClientRect();
+          const x = r.left + window.scrollX + r.width / 2;
+          const y = r.top  + window.scrollY + r.height / 2;
+          return { el: obj.el, x, y };
+        });
+        hash.clear();
+        centers.forEach((c, i) => indexIntoHash(i, c.x, c.y));
+      }, 120);
+    }, { passive: true });
+  });
 }
 
-document.querySelectorAll('[data-dots-container-init]').forEach(container => {
-const colors         = { base: '#FFFFFF0D', active: '#FFFFFF' };
-const threshold      = 200;
-const speedThreshold = 100;
-const shockRadius    = 325;
-const shockPower     = 5;
-const maxSpeed       = 5000;
-const centerHole     = true;
-
-const maxCols = 60;
-const maxRows = 40;
-
-const svgTemplate = container.querySelector('.dot-svg') || document.querySelector('.dot-svg');
-
-let dots = [];
-let centers = [];
-let hash = new Map();
-const cellSize = threshold;
-
-const keyFor = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
-
-function indexIntoHash(i, x, y) {
-const k = keyFor(x, y);
-const arr = hash.get(k) || [];
-if (!arr.length) hash.set(k, arr);
-arr.push(i);
-}
-
-function getNearbyIndices(x, y) {
-const cx = Math.floor(x / cellSize);
-const cy = Math.floor(y / cellSize);
-const out = [];
-for (let oy = -1; oy <= 1; oy++) {
-for (let ox = -1; ox <= 1; ox++) {
-const arr = hash.get(`${cx + ox}:${cy + oy}`);
-if (arr) out.push(...arr);
-}
-}
-return out;
-}
-
-function tintDot(el, color) {
-if (el._svg && el._svgFillEls?.length) {
-el._svgFillEls.forEach(n => n.setAttribute('fill', color));
-} else {
-gsap.set(el, { backgroundColor: color });
-}
-}
-
-// Build grid; compute centers/hashing only if interactive
-function buildGrid(computeCenters = supportsHoverFine) {
-container.innerHTML = '';
-dots = [];
-centers = [];
-hash.clear();
-
-const style = getComputedStyle(container);
-const dotPx = parseFloat(style.fontSize);
-const gapPx = dotPx * 2;
-const contW = container.clientWidth;
-const contH = container.clientHeight;
-
-let cols  = Math.floor((contW + gapPx) / (dotPx + gapPx));
-let rows  = Math.floor((contH + gapPx) / (dotPx + gapPx));
-
-const colStep = Math.max(1, Math.ceil(cols / maxCols));
-const rowStep = Math.max(1, Math.ceil(rows / maxRows));
-cols = Math.ceil(cols / colStep);
-rows = Math.ceil(rows / rowStep);
-
-const total = cols * rows;
-
-const holeCols = centerHole ? (cols % 2 === 0 ? 4 : 5) : 0;
-const holeRows = centerHole ? (rows % 2 === 0 ? 4 : 5) : 0;
-const startCol = (cols - holeCols) / 2;
-const startRow = (rows - holeRows) / 2;
-
-for (let i = 0; i < total; i++) {
-const row = Math.floor(i / cols);
-const col = i % cols;
-const isHole =
-centerHole &&
-row >= startRow && row < startRow + holeRows &&
-col >= startCol && col < startCol + holeCols;
-
-const d = document.createElement('div');
-d.className = 'dot';
-d.style.willChange = 'transform';
-
-if (isHole) {
-d.style.visibility = 'hidden';
-d._isHole = true;
-} else {
-if (svgTemplate) {
-const svg = svgTemplate.cloneNode(true);
-svg.style.display = '';
-svg.setAttribute('aria-hidden', 'true');
-d.appendChild(svg);
-d._svg = svg;
-
-const fillMarked = svg.querySelectorAll('[data-dot-fill]');
-const withFillAttr = svg.querySelectorAll('[fill]');
-d._svgFillEls = fillMarked.length
-? fillMarked
-: (withFillAttr.length ? withFillAttr : svg.querySelectorAll('path, rect, circle, polygon, ellipse'));
-}
-d._inertiaApplied = false;
-tintDot(d, colors.base);
-}
-
-container.appendChild(d);
-if (!d._isHole) dots.push(d);
-}
-
-// Only do expensive measurements/indexing if interactivity is enabled
-if (!computeCenters) return;
-
-requestAnimationFrame(() => {
-centers = dots.map(el => {
-const r = el.getBoundingClientRect();
-const x = r.left + window.scrollX + r.width / 2;
-const y = r.top  + window.scrollY + r.height / 2;
-return { el, x, y };
-});
-centers.forEach((c, i) => indexIntoHash(i, c.x, c.y));
-});
-}
-
-window.addEventListener('resize', () => buildGrid(supportsHoverFine), { passive: true });
-buildGrid(supportsHoverFine);
-
-// If no hover, we stop here: static, nice-looking dots, no JS interactivity.
-if (!supportsHoverFine) return;
-
-// From here down, we’re interactive-only. Require InertiaPlugin.
-if (typeof InertiaPlugin === 'undefined') return;
-
-let lastTime = 0, lastX = 0, lastY = 0;
-
-window.addEventListener('mousemove', (e) => {
-const now = performance.now();
-const dt  = now - lastTime || 16;
-let dx = e.pageX - lastX;
-let dy = e.pageY - lastY;
-let vx = dx / dt * 1000;
-let vy = dy / dt * 1000;
-let speed = Math.hypot(vx, vy);
-
-if (speed > maxSpeed) {
-const s = maxSpeed / speed;
-vx *= s; vy *= s; speed = maxSpeed;
-}
-
-lastTime = now; lastX = e.pageX; lastY = e.pageY;
-
-const nearby = getNearbyIndices(e.pageX, e.pageY);
-if (!nearby.length) return;
-
-requestAnimationFrame(() => {
-for (let i = 0; i < nearby.length; i++) {
-const c = centers[nearby[i]];
-const el = c.el;
-const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
-if (dist > threshold) continue;
-
-const t = 1 - dist / threshold;
-const col = gsap.utils.interpolate(colors.base, colors.active, t);
-tintDot(el, col);
-
-if (speed > speedThreshold && !el._inertiaApplied) {
-el._inertiaApplied = true;
-const pushX = (c.x - e.pageX) + vx * 0.005;
-const pushY = (c.y - e.pageY) + vy * 0.005;
-gsap.to(el, {
-inertia: { x: pushX, y: pushY, resistance: 750 },
-onComplete() {
-gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-el._inertiaApplied = false;
-}
-});
-}
-}
-});
-}, { passive: true });
-
-window.addEventListener('click', (e) => {
-const nearby = getNearbyIndices(e.pageX, e.pageY);
-if (!nearby.length) return;
-
-for (let i = 0; i < nearby.length; i++) {
-const c = centers[nearby[i]];
-const el = c.el;
-const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
-if (dist >= shockRadius || el._inertiaApplied) continue;
-
-el._inertiaApplied = true;
-const falloff = 1 - dist / shockRadius;
-const pushX   = (c.x - e.pageX) * shockPower * falloff;
-const pushY   = (c.y - e.pageY) * shockPower * falloff;
-
-gsap.to(el, {
-inertia: { x: pushX, y: pushY, resistance: 750 },
-onComplete() {
-gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-el._inertiaApplied = false;
-}
-});
-}
-}, { passive: true });
-});
-}
 
 
 // ──────────────────────────────────────────────────────────────────────────────
