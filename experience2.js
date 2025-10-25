@@ -228,236 +228,205 @@ document.addEventListener('pointerleave', () => setZone(false), { passive: true 
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Glowing Interactive Dots Grid (hover-only interactivity)
+// Glowing Interactive Dots Grid — ultra-light version (20×9 desktop cap)
 // ──────────────────────────────────────────────────────────────────────────────
 function initGlowingInteractiveDotsGrid() {
-if (typeof gsap === 'undefined') return;
+  if (typeof gsap === 'undefined') return;
 
-// Only allow on devices with hover + fine pointer (mouse/trackpad)
-const supportsHoverFine = !!(window.matchMedia &&
-window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  // Only allow on devices with hover + fine pointer (mouse/trackpad)
+  const supportsHoverFine = !!(window.matchMedia &&
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches);
 
-// If not supported, hard-hide the containers and bail
-if (!supportsHoverFine) {
-document.querySelectorAll('[data-dots-container-init]').forEach(el => {
-el.setAttribute('hidden', '');
-el.setAttribute('aria-hidden', 'true');
-el.style.display = 'none';
-});
-return;
+  // If not supported, hard-hide containers and bail
+  if (!supportsHoverFine) {
+    document.querySelectorAll('[data-dots-container-init]').forEach(el => {
+      el.setAttribute('hidden', '');
+      el.setAttribute('aria-hidden', 'true');
+      el.style.display = 'none';
+    });
+    return;
+  }
+
+  const isDesktop = () => window.matchMedia('(min-width: 992px)').matches;
+
+  document.querySelectorAll('[data-dots-container-init]').forEach(container => {
+    // CONFIG (tweak freely)
+    const COLORS = { base: 'rgba(255,255,255,0.08)', active: '#FFF' };
+    const HOVER_RADIUS = 180;    // px — glow radius
+    const PUSH_STRENGTH = 6;     // px — how much a dot nudges away on hover
+    const CLICK_RADIUS = 320;    // px — shockwave radius
+    const CLICK_PUSH = 20;       // px — click push multiplier
+    const RETURN_DUR = 0.9;      // sec — ease back duration
+    const RETURN_EASE = 'power3.out';
+
+    // Desktop: fixed 20x9. Else: auto-fit but never exceed 20x9.
+    function getGridDims() {
+      if (isDesktop()) return { cols: 20, rows: 9 };
+      const cs = getComputedStyle(container);
+      // Base sizes from font-size to keep it scalable
+      const dotPx = parseFloat(cs.fontSize) || 8;
+      const gapPx = dotPx * 2;
+      const w = container.clientWidth || 300;
+      const h = container.clientHeight || 150;
+
+      // Try to fit a reasonable number, but clamp to 20×9
+      let cols = Math.max(6, Math.floor((w + gapPx) / (dotPx + gapPx)));
+      let rows = Math.max(4, Math.floor((h + gapPx) / (dotPx + gapPx)));
+      cols = Math.min(cols, 20);
+      rows = Math.min(rows, 9);
+      return { cols, rows };
+    }
+
+    // Reuse an <svg><symbol id="eye-icon">…</symbol></svg> defined in the DOM
+    // If not present, we’ll fall back to a simple circle dot.
+    const symbolId = container.getAttribute('data-dots-symbol-id') || 'eye-icon';
+    const hasSymbol = !!document.getElementById(symbolId);
+
+    let dots = [];       // {el, cx, cy, qx, qy, svgFillEls}
+    let centersDirty = false;
+
+    function tint(el, t) {
+      // t ∈ [0..1] blend base → active
+      const col = gsap.utils.interpolate(COLORS.base, COLORS.active, t);
+      if (el._svgFillEls?.length) {
+        el._svgFillEls.forEach(n => n.setAttribute('fill', col));
+      } else {
+        el.style.backgroundColor = col;
+      }
+    }
+
+    function buildGrid() {
+      container.innerHTML = '';
+      dots = [];
+
+      const { cols, rows } = getGridDims();
+      container.style.setProperty('--dots-cols', cols);
+      container.style.setProperty('--dots-rows', rows);
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const d = document.createElement('div');
+          d.className = 'dot';
+          d.style.willChange = 'transform, background-color';
+
+          // SVG eye or fallback
+          if (hasSymbol) {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('aria-hidden', 'true');
+            svg.setAttribute('focusable', 'false');
+            svg.classList.add('dot-svg');
+            const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+            use.setAttributeNS('http://www.w3.org/1999/xlink', 'href', `#${symbolId}`);
+            svg.appendChild(use);
+            d.appendChild(svg);
+            // Fill targets:
+            d._svgFillEls = svg.querySelectorAll('[data-dot-fill],[fill],path,rect,circle,polygon,ellipse');
+          }
+
+          container.appendChild(d);
+
+          // quickTo handles—super cheap updates
+          const qx = gsap.quickTo(d, 'x', { duration: 0.25, ease: 'power2.out' });
+          const qy = gsap.quickTo(d, 'y', { duration: 0.25, ease: 'power2.out' });
+
+          dots.push({ el: d, cx: 0, cy: 0, qx, qy, _busy: false, _svgFillEls: d._svgFillEls });
+          tint(d, 0); // base color
+        }
+      }
+
+      // centers need measuring after paint
+      centersDirty = true;
+      requestAnimationFrame(updateCenters);
+    }
+
+    function updateCenters() {
+      if (!centersDirty) return;
+      centersDirty = false;
+      for (const d of dots) {
+        const r = d.el.getBoundingClientRect();
+        d.cx = r.left + window.scrollX + r.width / 2;
+        d.cy = r.top + window.scrollY + r.height / 2;
+      }
+    }
+
+    // Build now + on resize
+    buildGrid();
+    const onResize = () => { buildGrid(); };
+    window.addEventListener('resize', onResize, { passive: true });
+
+    // Interactions (hover move + glow)
+    let lastX = 0, lastY = 0;
+    let rafPending = false;
+
+    function frame() {
+      rafPending = false;
+      // lazy center refresh (layout shifts)
+      if (Math.random() < 0.05) centersDirty = true; // cheap safeguard
+      if (centersDirty) updateCenters();
+
+      for (const d of dots) {
+        const dx = d.cx - lastX;
+        const dy = d.cy - lastY;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist <= HOVER_RADIUS) {
+          const t = 1 - (dist / HOVER_RADIUS); // 0..1
+          tint(d.el, t);
+
+          // small push proportional to direction & t
+          const nx = dx / (dist || 1);
+          const ny = dy / (dist || 1);
+          d.qx(nx * PUSH_STRENGTH * t);
+          d.qy(ny * PUSH_STRENGTH * t);
+        } else {
+          tint(d.el, 0);
+          // ease back home (quickTo already does)
+          d.qx(0);
+          d.qy(0);
+        }
+      }
+    }
+
+    window.addEventListener('mousemove', (e) => {
+      lastX = e.pageX;
+      lastY = e.pageY;
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(frame);
+      }
+    }, { passive: true });
+
+    // Click shockwave
+    window.addEventListener('click', (e) => {
+      const x = e.pageX, y = e.pageY;
+      // We don’t need centers refreshed exactly; close enough.
+      for (const d of dots) {
+        const dx = d.cx - x;
+        const dy = d.cy - y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > CLICK_RADIUS) continue;
+
+        const falloff = 1 - (dist / CLICK_RADIUS); // 0..1
+        const nx = dx / (dist || 1);
+        const ny = dy / (dist || 1);
+        const px = nx * CLICK_PUSH * falloff;
+        const py = ny * CLICK_PUSH * falloff;
+
+        // quick “push out”, then ease back
+        gsap.to(d.el, { x: px, y: py, duration: 0.18, ease: 'power2.out', overwrite: true })
+           .then(() => gsap.to(d.el, { x: 0, y: 0, duration: RETURN_DUR, ease: RETURN_EASE }));
+      }
+    }, { passive: true });
+
+    // Refresh centers on scroll in case of large movements
+    let scrollTO;
+    window.addEventListener('scroll', () => {
+      clearTimeout(scrollTO);
+      scrollTO = setTimeout(() => { centersDirty = true; updateCenters(); }, 100);
+    }, { passive: true });
+  });
 }
 
-document.querySelectorAll('[data-dots-container-init]').forEach(container => {
-const colors         = { base: '#FFFFFF0D', active: '#FFFFFF' };
-const threshold      = 200;
-const speedThreshold = 100;
-const shockRadius    = 325;
-const shockPower     = 5;
-const maxSpeed       = 5000;
-const centerHole     = true;
-
-const maxCols = 60;
-const maxRows = 40;
-
-const svgTemplate = container.querySelector('.dot-svg') || document.querySelector('.dot-svg');
-
-let dots = [];
-let centers = [];
-let hash = new Map();
-const cellSize = threshold;
-
-const keyFor = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
-
-function indexIntoHash(i, x, y) {
-const k = keyFor(x, y);
-const arr = hash.get(k) || [];
-if (!arr.length) hash.set(k, arr);
-arr.push(i);
-}
-
-function getNearbyIndices(x, y) {
-const cx = Math.floor(x / cellSize);
-const cy = Math.floor(y / cellSize);
-const out = [];
-for (let oy = -1; oy <= 1; oy++) {
-for (let ox = -1; ox <= 1; ox++) {
-const arr = hash.get(`${cx + ox}:${cy + oy}`);
-if (arr) out.push(...arr);
-}
-}
-return out;
-}
-
-function tintDot(el, color) {
-if (el._svg && el._svgFillEls?.length) {
-el._svgFillEls.forEach(n => n.setAttribute('fill', color));
-} else {
-gsap.set(el, { backgroundColor: color });
-}
-}
-
-// Build grid; compute centers/hashing only if interactive
-function buildGrid(computeCenters = supportsHoverFine) {
-container.innerHTML = '';
-dots = [];
-centers = [];
-hash.clear();
-
-const style = getComputedStyle(container);
-const dotPx = parseFloat(style.fontSize);
-const gapPx = dotPx * 2;
-const contW = container.clientWidth;
-const contH = container.clientHeight;
-
-let cols  = Math.floor((contW + gapPx) / (dotPx + gapPx));
-let rows  = Math.floor((contH + gapPx) / (dotPx + gapPx));
-
-const colStep = Math.max(1, Math.ceil(cols / maxCols));
-const rowStep = Math.max(1, Math.ceil(rows / maxRows));
-cols = Math.ceil(cols / colStep);
-rows = Math.ceil(rows / rowStep);
-
-const total = cols * rows;
-
-const holeCols = centerHole ? (cols % 2 === 0 ? 4 : 5) : 0;
-const holeRows = centerHole ? (rows % 2 === 0 ? 4 : 5) : 0;
-const startCol = (cols - holeCols) / 2;
-const startRow = (rows - holeRows) / 2;
-
-for (let i = 0; i < total; i++) {
-const row = Math.floor(i / cols);
-const col = i % cols;
-const isHole =
-centerHole &&
-row >= startRow && row < startRow + holeRows &&
-col >= startCol && col < startCol + holeCols;
-
-const d = document.createElement('div');
-d.className = 'dot';
-d.style.willChange = 'transform';
-
-if (isHole) {
-d.style.visibility = 'hidden';
-d._isHole = true;
-} else {
-if (svgTemplate) {
-const svg = svgTemplate.cloneNode(true);
-svg.style.display = '';
-svg.setAttribute('aria-hidden', 'true');
-d.appendChild(svg);
-d._svg = svg;
-
-const fillMarked = svg.querySelectorAll('[data-dot-fill]');
-const withFillAttr = svg.querySelectorAll('[fill]');
-d._svgFillEls = fillMarked.length
-? fillMarked
-: (withFillAttr.length ? withFillAttr : svg.querySelectorAll('path, rect, circle, polygon, ellipse'));
-}
-d._inertiaApplied = false;
-tintDot(d, colors.base);
-}
-
-container.appendChild(d);
-if (!d._isHole) dots.push(d);
-}
-
-// Only do expensive measurements/indexing if interactivity is enabled
-if (!computeCenters) return;
-
-requestAnimationFrame(() => {
-centers = dots.map(el => {
-const r = el.getBoundingClientRect();
-const x = r.left + window.scrollX + r.width / 2;
-const y = r.top  + window.scrollY + r.height / 2;
-return { el, x, y };
-});
-centers.forEach((c, i) => indexIntoHash(i, c.x, c.y));
-});
-}
-
-window.addEventListener('resize', () => buildGrid(supportsHoverFine), { passive: true });
-buildGrid(supportsHoverFine);
-
-// If no hover, we stop here: static, nice-looking dots, no JS interactivity.
-if (!supportsHoverFine) return;
-
-// From here down, we’re interactive-only. Require InertiaPlugin.
-if (typeof InertiaPlugin === 'undefined') return;
-
-let lastTime = 0, lastX = 0, lastY = 0;
-
-window.addEventListener('mousemove', (e) => {
-const now = performance.now();
-const dt  = now - lastTime || 16;
-let dx = e.pageX - lastX;
-let dy = e.pageY - lastY;
-let vx = dx / dt * 1000;
-let vy = dy / dt * 1000;
-let speed = Math.hypot(vx, vy);
-
-if (speed > maxSpeed) {
-const s = maxSpeed / speed;
-vx *= s; vy *= s; speed = maxSpeed;
-}
-
-lastTime = now; lastX = e.pageX; lastY = e.pageY;
-
-const nearby = getNearbyIndices(e.pageX, e.pageY);
-if (!nearby.length) return;
-
-requestAnimationFrame(() => {
-for (let i = 0; i < nearby.length; i++) {
-const c = centers[nearby[i]];
-const el = c.el;
-const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
-if (dist > threshold) continue;
-
-const t = 1 - dist / threshold;
-const col = gsap.utils.interpolate(colors.base, colors.active, t);
-tintDot(el, col);
-
-if (speed > speedThreshold && !el._inertiaApplied) {
-el._inertiaApplied = true;
-const pushX = (c.x - e.pageX) + vx * 0.005;
-const pushY = (c.y - e.pageY) + vy * 0.005;
-gsap.to(el, {
-inertia: { x: pushX, y: pushY, resistance: 750 },
-onComplete() {
-gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-el._inertiaApplied = false;
-}
-});
-}
-}
-});
-}, { passive: true });
-
-window.addEventListener('click', (e) => {
-const nearby = getNearbyIndices(e.pageX, e.pageY);
-if (!nearby.length) return;
-
-for (let i = 0; i < nearby.length; i++) {
-const c = centers[nearby[i]];
-const el = c.el;
-const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
-if (dist >= shockRadius || el._inertiaApplied) continue;
-
-el._inertiaApplied = true;
-const falloff = 1 - dist / shockRadius;
-const pushX   = (c.x - e.pageX) * shockPower * falloff;
-const pushY   = (c.y - e.pageY) * shockPower * falloff;
-
-gsap.to(el, {
-inertia: { x: pushX, y: pushY, resistance: 750 },
-onComplete() {
-gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: 'elastic.out(1,0.75)' });
-el._inertiaApplied = false;
-}
-});
-}
-}, { passive: true });
-});
-}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Dynamic Current Year
