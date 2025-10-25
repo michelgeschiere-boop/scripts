@@ -283,14 +283,16 @@ window.destroyThemedSVGCursor = () => {
 
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Glowing Interactive Dots Grid (same behavior, less DOM + less per-frame work)
+// Glowing Interactive Dots Grid (same UX; fewer nodes; window-level interactivity)
 // ──────────────────────────────────────────────────────────────────────────────
 function initGlowingInteractiveDotsGrid() {
   if (typeof gsap === 'undefined') return;
 
+  // Only allow on devices with hover + fine pointer (mouse/trackpad)
   const supportsHoverFine = !!(window.matchMedia &&
     window.matchMedia('(hover: hover) and (pointer: fine)').matches);
 
+  // If not supported, hard-hide the containers and bail
   if (!supportsHoverFine) {
     document.querySelectorAll('[data-dots-container-init]').forEach(el => {
       el.setAttribute('hidden', '');
@@ -301,6 +303,7 @@ function initGlowingInteractiveDotsGrid() {
   }
 
   document.querySelectorAll('[data-dots-container-init]').forEach(container => {
+    // ==== Config (same as your original) ====
     const colors         = { base: '#FFFFFF0D', active: '#FFFFFF' };
     const threshold      = 200;
     const speedThreshold = 100;
@@ -309,7 +312,7 @@ function initGlowingInteractiveDotsGrid() {
     const maxSpeed       = 5000;
     const centerHole     = true;
 
-    // ↓↓↓ IMPORTANT: cap density (desktop) — same grid, just fewer elements
+    // === Density caps (desktop) to reduce DOM ===
     const MAX_COLS = parseInt(container.getAttribute('data-dots-max-cols')) || 20;
     const MAX_ROWS = parseInt(container.getAttribute('data-dots-max-rows')) || 9;
 
@@ -321,15 +324,6 @@ function initGlowingInteractiveDotsGrid() {
     const cellSize = threshold;
 
     const isDesktop = () => window.matchMedia('(min-width: 992px)').matches;
-
-    // Only do work while on screen
-    let isActive = true;
-    if ('IntersectionObserver' in window) {
-      const io = new IntersectionObserver((entries) => {
-        isActive = !!entries[0]?.isIntersecting;
-      }, { threshold: 0.05 });
-      io.observe(container);
-    }
 
     const keyFor = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
 
@@ -353,10 +347,10 @@ function initGlowingInteractiveDotsGrid() {
       return out;
     }
 
-    // BIG WIN: never loop _svgFillEls on every paint — use currentColor
+    // PERF: color via currentColor, not per-path fill writes
     function tintDot(el, color) {
       if (el._hasSvg) {
-        el.style.color = color;          // drives fill via CSS (see snippet below)
+        el.style.color = color; // CSS rule makes SVG follow this
       } else {
         gsap.set(el, { backgroundColor: color });
       }
@@ -377,7 +371,7 @@ function initGlowingInteractiveDotsGrid() {
       let cols  = Math.floor((contW + gapPx) / (dotPx + gapPx));
       let rows  = Math.floor((contH + gapPx) / (dotPx + gapPx));
 
-      // ↓↓↓ cap on desktop to reduce DOM
+      // Cap to reduce DOM on desktop (same layout logic otherwise)
       if (isDesktop()) {
         cols = Math.min(cols, MAX_COLS);
         rows = Math.min(rows, MAX_ROWS);
@@ -413,7 +407,7 @@ function initGlowingInteractiveDotsGrid() {
             svg.style.display = '';
             svg.setAttribute('aria-hidden', 'true');
             d.appendChild(svg);
-            d._hasSvg = true;            // we’ll color via currentColor (CSS)
+            d._hasSvg = true; // we tint via currentColor
           }
           tintDot(d, colors.base);
         }
@@ -440,13 +434,33 @@ function initGlowingInteractiveDotsGrid() {
     window.addEventListener('resize', () => buildGrid(true), { passive: true });
     buildGrid(true);
 
-    if (typeof InertiaPlugin === 'undefined') return; // keep original behavior gate
+    // === Interactivity EXACTLY like your original: window-level listeners ===
+    if (typeof InertiaPlugin === 'undefined') return;
 
     let lastTime = 0, lastX = 0, lastY = 0;
+    let hoverRaf = 0;
 
-    container.addEventListener('mousemove', (e) => {
-      if (!isActive) return;
+    function paintHover(mouseX, mouseY) {
+      hoverRaf = 0;
+      const nearby = getNearbyIndices(mouseX, mouseY);
+      if (!nearby.length) return;
 
+      for (let i = 0; i < nearby.length; i++) {
+        const c = centers[nearby[i]];
+        const el = c.el;
+        const dist = Math.hypot(c.x - mouseX, c.y - mouseY);
+        if (dist > threshold) {
+          tintDot(el, colors.base);
+          continue;
+        }
+        const t = 1 - dist / threshold;
+        const col = gsap.utils.interpolate(colors.base, colors.active, t);
+        tintDot(el, col);
+      }
+    }
+
+    // Use PAGE coordinates like your original
+    window.addEventListener('mousemove', (e) => {
       const now = performance.now();
       const dt  = now - lastTime || 16;
       let dx = e.pageX - lastX;
@@ -463,22 +477,15 @@ function initGlowingInteractiveDotsGrid() {
       lastTime = now; lastX = e.pageX; lastY = e.pageY;
 
       const nearby = getNearbyIndices(e.pageX, e.pageY);
-      if (!nearby.length) return;
+      if (nearby.length) {
+        // rAF one paint pass for tints
+        if (!hoverRaf) hoverRaf = requestAnimationFrame(() => paintHover(e.pageX, e.pageY));
 
-      // rAF one paint of tints (avoid per-move thrash)
-      requestAnimationFrame(() => {
         for (let i = 0; i < nearby.length; i++) {
           const c = centers[nearby[i]];
           const el = c.el;
           const dist = Math.hypot(c.x - e.pageX, c.y - e.pageY);
-          if (dist > threshold) {
-            tintDot(el, colors.base);
-            continue;
-          }
-
-          const t = 1 - dist / threshold;
-          const col = gsap.utils.interpolate(colors.base, colors.active, t);
-          tintDot(el, col);
+          if (dist > threshold) continue;
 
           if (speed > speedThreshold && !el._inertiaApplied) {
             el._inertiaApplied = true;
@@ -493,12 +500,10 @@ function initGlowingInteractiveDotsGrid() {
             });
           }
         }
-      });
+      }
     }, { passive: true });
 
-    container.addEventListener('click', (e) => {
-      if (!isActive) return;
-
+    window.addEventListener('click', (e) => {
       const nearby = getNearbyIndices(e.pageX, e.pageY);
       if (!nearby.length) return;
 
@@ -523,10 +528,9 @@ function initGlowingInteractiveDotsGrid() {
       }
     }, { passive: true });
 
-    // Light refresh of centers after scroll/layout shifts
+    // Refresh centers after scroll/layout shifts (like your original)
     let scrollTO;
     window.addEventListener('scroll', () => {
-      if (!isActive) return;
       clearTimeout(scrollTO);
       scrollTO = setTimeout(() => {
         centers = dots.map(el => {
@@ -541,6 +545,7 @@ function initGlowingInteractiveDotsGrid() {
     }, { passive: true });
   });
 }
+
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Dynamic Current Year
