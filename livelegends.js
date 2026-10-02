@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.0.0 | built 2026-10-02 | source: src/ */
+/*! Live Legends site scripts v1.0.1 | built 2026-10-02 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -55,10 +55,14 @@
     else { window.scrollTo({ top: y, behavior: 'smooth' }); setTimeout(resolve, duration * 1000); }
   });
 
-  /* Run something once the homepage loader is done (immediately on other pages) */
+  /* Run something once the homepage loader reveals the page (immediately on other pages).
+     'loader:reveal' fires while the Flip is still landing, so text reveals overlap it instead of waiting. */
   LL.afterLoader = (cb) => {
-    if (html.classList.contains('is-loading')) window.addEventListener('loader:done', cb, { once: true });
-    else cb();
+    if (!html.classList.contains('is-loading')) { cb(); return; }
+    let ran = false;
+    const run = () => { if (!ran) { ran = true; cb(); } };
+    window.addEventListener('loader:reveal', run, { once: true });
+    window.addEventListener('loader:done', run, { once: true });
   };
 
   /* Read a URL from a CMS-bound element (link href or text) */
@@ -432,7 +436,7 @@
       if (media) { media.classList.remove('is-loader-state'); gsap.set(media, { clearProps: 'opacity,visibility,zIndex,clipPath,transform,width,height' }); }
       gsap.set([...content, ...cubes], { clearProps: 'opacity,visibility,transform' });
       LL.startScroll();
-      ScrollTrigger.refresh();
+      requestAnimationFrame(() => ScrollTrigger.refresh(true));
       window.dispatchEvent(new Event('loader:done'));
     };
     if (!html.classList.contains('is-loading')) return;
@@ -465,7 +469,8 @@
         .add(Flip.from(state, { duration: 1.5, ease: LL.EASE_IO, scale: false }), 0.25)
         .fromTo(media, { clipPath: LOGO_START }, { clipPath: LOGO_END, duration: 1.5, ease: LL.EASE_IO }, 0.25)
         .to(loader, { autoAlpha: 0, duration: 0.7, ease: LL.EASE }, 0.9)
-        .fromTo(content, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: LL.D.base, ease: LL.EASE, stagger: 0.06 }, 1.2)
+        .call(() => window.dispatchEvent(new Event('loader:reveal')), null, 1.05)
+        .fromTo(content, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: LL.D.base, ease: LL.EASE, stagger: 0.06 }, 1.1)
         .to(cubes, { autoAlpha: 1, duration: 0.01, stagger: { each: 0.06, from: 'random' } }, 1.3);
     });
   }, 'last');
@@ -476,7 +481,8 @@
 (function () {
   const LL = window.LiveLegends;
 
-  /* Parallax on every photo (.u-cover). Skipped where another animation owns the image. */
+  /* Parallax on every photo (.u-cover). Skipped where another animation owns the image.
+     Set up before the homepage loader (phase 'ready'), so the hero image does not jump after the Flip. */
   const PARALLAX = { shift: 7, scale: 1.16, scrub: 1 };
   const PARALLAX_SELECTOR = '.u-cover, [data-parallax]';
   const PARALLAX_SKIP = '[data-infinite-grid-init], .lab-modal, .team-card, .navbar_component, .thrive_image-item, .hero-split_preview, [data-no-parallax]';
@@ -490,7 +496,7 @@
       gsap.set(img, { scale: PARALLAX.scale, transformOrigin: 'center center', willChange: 'transform' });
       gsap.fromTo(img, { yPercent: -PARALLAX.shift }, { yPercent: PARALLAX.shift, ease: 'none', scrollTrigger: { trigger: frame, start: 'top bottom', end: 'bottom top', scrub: PARALLAX.scrub, invalidateOnRefresh: true } });
     });
-  }, 'afterLoader');
+  });
 
   /* Background videos ([data-hero-video]) and the small "Play video" preview cards ([data-hero-preview]) */
   LL.register('backgroundVideos', () => {
