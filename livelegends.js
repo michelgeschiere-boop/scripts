@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.0.1 | built 2026-10-02 | source: src/ */
+/*! Live Legends site scripts v1.0.2 | built 2026-10-05 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -285,7 +285,7 @@
 
 /* ---- src/global/transition.js ---- */
 /* Page transition (Osmo Supply – Basic Pixelated Page Transition, without Barba) + homepage loader.
-   Pixel size = the cube size on the images (.u-cube, 3em), measured live.
+   Pixel size = the cube size on the images (--ll-cube: 3em, 1.5em on mobile), measured live.
    The tiny pre-paint part (covering the page on arrival) stays inline in the Webflow head. */
 (function () {
   const LL = window.LiveLegends;
@@ -316,7 +316,7 @@
     const probe = document.createElement('div');
     probe.className = 'u-cube';
     probe.setAttribute('aria-hidden', 'true');
-    probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;width:3em;height:3em;';
+    probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;width:var(--ll-cube,3em);height:var(--ll-cube,3em);';
     (document.querySelector('.main-wrapper') || document.body).appendChild(probe);
     const size = probe.getBoundingClientRect().width;
     probe.remove();
@@ -1241,14 +1241,14 @@
 })();
 
 /* ---- src/pages/people.js ---- */
-/* People: hover pixels on the team photos – site-size cubes (3em) along the photo edge, in the background colour */
+/* People: hover pixels on the team photos – site-size cubes (--ll-cube: 3em, 1.5em on mobile) along the photo edge, in the background colour */
 (function () {
   const LL = window.LiveLegends;
 
   const cubeSize = (el) => {
     const probe = document.createElement('div');
     probe.className = 'u-cube';
-    probe.style.cssText = 'position:absolute;visibility:hidden;width:3em;height:3em';
+    probe.style.cssText = 'position:absolute;visibility:hidden;width:var(--ll-cube,3em);height:var(--ll-cube,3em)';
     el.appendChild(probe);
     const s = probe.getBoundingClientRect().width;
     probe.remove();
