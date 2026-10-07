@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.1.0 | built 2026-10-07 | source: src/ */
+/*! Live Legends site scripts v1.1.1 | built 2026-10-07 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -544,12 +544,16 @@
   const PARALLAX = { shift: 6, scale: 1.16, scrub: 1 };
   const PARALLAX_SELECTOR = '.u-cover, [data-parallax]';
   const PARALLAX_SKIP = '[data-infinite-grid-init], .lab-modal, .team-card, .navbar_component, .thrive_image-item, .hero-split_preview, [data-no-parallax]';
+  /* Shared check: does this photo get parallax? Also used by sectionReveal (interactions.js),
+     because blocks with a parallax photo never get an entrance animation. */
+  LL.isParallaxImage = (img) => !!img.parentElement && !img.closest(PARALLAX_SKIP);
+  LL.hasParallaxImage = (scope) => [...scope.querySelectorAll(PARALLAX_SELECTOR)].some(LL.isParallaxImage);
   LL.register('imageMotion', () => {
     if (LL.reduceMotion) return;
     const tweens = [];
     document.querySelectorAll(PARALLAX_SELECTOR).forEach((img) => {
       const frame = img.parentElement;
-      if (!frame || img.closest(PARALLAX_SKIP)) return;
+      if (!LL.isParallaxImage(img)) return;
       if (getComputedStyle(frame).position === 'static') frame.style.position = 'relative';
       frame.style.overflow = 'hidden';
       gsap.set(img, { scale: PARALLAX.scale, transformOrigin: 'center center', willChange: 'transform' });
@@ -717,11 +721,14 @@
     }));
   }, 'afterLoader');
 
-  /* Sections: content settles in */
+  /* Sections: content settles in. Never on a block with a parallax photo: the entrance (y + fade) on top of the
+     parallax made the photo visibly slide up against the text background (feedback Bas/Gordana). Those blocks
+     only get their parallax; headings with data-split inside them still reveal line by line. */
   const SECTION_SELECTOR = '.section_story, .section_image-wide, .section_cta-image, .section_home-split, .section_people-cta, .section_news';
   LL.register('sectionReveal', () => {
     if (LL.reduceMotion) return;
     document.querySelectorAll(SECTION_SELECTOR).forEach((section) => {
+      if (LL.hasParallaxImage && LL.hasParallaxImage(section)) return;
       const inner = section.querySelector('.padding-global') || section.firstElementChild;
       if (!inner) return;
       gsap.from(inner, { y: 32, autoAlpha: 0, duration: LL.D.slow, ease: LL.EASE, scrollTrigger: { trigger: section, start: 'top 82%', once: true }, clearProps: 'opacity,visibility,transform' });
