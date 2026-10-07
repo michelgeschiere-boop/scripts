@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.0.2 | built 2026-10-05 | source: src/ */
+/*! Live Legends site scripts v1.1.0 | built 2026-10-07 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -247,6 +247,60 @@
     });
   }, 'early');
 
+  /* Cube grid: every cube set becomes a whole number of cubes wide and high; every cube snaps to that grid
+     (right/bottom-anchored ones too) and a cube landing on an occupied cell is dropped. Re-runs on resize.
+     Runs before cubeEdges and cubeBuildUp, which read the final cube positions. */
+  LL.register('cubeGrid', () => {
+    const sets = [...document.querySelectorAll('[data-cube-set]')];
+    if (!sets.length) return;
+    const PROPS = ['left', 'right', 'top', 'bottom', 'width', 'height', 'display'];
+    const pct = (n, d) => (n / d) * 100 + '%';
+    const cubeSize = (set) => {
+      const probe = document.createElement('div');
+      probe.className = 'u-cube';
+      probe.style.cssText = 'position:absolute;visibility:hidden;left:0;top:0;width:3em;height:3em';
+      set.appendChild(probe);
+      const size = probe.offsetWidth;
+      probe.remove();
+      return size;
+    };
+    const snap = (set) => {
+      const cubes = [...set.querySelectorAll('.u-cube')];
+      cubes.forEach((c) => PROPS.forEach((p) => c.style.removeProperty(p)));
+      const W = set.offsetWidth, H = set.offsetHeight, base = cubeSize(set);
+      if (!W || !H || !base) return;
+      const cols = Math.max(1, Math.round(W / base)), rows = Math.max(1, Math.round(H / base));
+      const taken = new Set();
+      cubes.forEach((c) => {
+        if (!c.offsetWidth) return; // hidden by the CSS (e.g. on mobile)
+        const x = c.offsetLeft, y = c.offsetTop, w = c.offsetWidth, h = c.offsetHeight;
+        let spanX = Math.min(cols, Math.max(1, Math.round(w / base)));
+        let spanY = Math.min(rows, Math.max(1, Math.round(h / base)));
+        const fromRight = W - x - w < x - 0.5, fromBottom = H - y - h < y - 0.5;
+        let col = fromRight ? cols - spanX - Math.round((W - x - w) / base) : Math.round(x / base);
+        let row = fromBottom ? rows - spanY - Math.round((H - y - h) / base) : Math.round(y / base);
+        if (col >= cols || row >= rows || col + spanX <= 0 || row + spanY <= 0) { c.style.display = 'none'; return; } // falls outside the frame
+        if (col < 0) { spanX += col; col = 0; }
+        if (row < 0) { spanY += row; row = 0; }
+        spanX = Math.min(spanX, cols - col);
+        spanY = Math.min(spanY, rows - row);
+        const cells = [];
+        for (let i = col; i < col + spanX; i++) for (let j = row; j < row + spanY; j++) cells.push(i + ',' + j);
+        if (cells.some((k) => taken.has(k))) { c.style.display = 'none'; return; }
+        cells.forEach((k) => taken.add(k));
+        c.style.width = pct(spanX, cols);
+        c.style.height = pct(spanY, rows);
+        if (fromRight) { c.style.left = 'auto'; c.style.right = pct(cols - col - spanX, cols); }
+        else { c.style.right = 'auto'; c.style.left = pct(col, cols); }
+        if (fromBottom) { c.style.top = 'auto'; c.style.bottom = pct(rows - row - spanY, rows); }
+        else { c.style.bottom = 'auto'; c.style.top = pct(row, rows); }
+      });
+      set.setAttribute('data-cube-grid', cols + 'x' + rows);
+    };
+    const ro = new ResizeObserver((entries) => entries.forEach((e) => snap(e.target)));
+    sets.forEach((set) => { snap(set); ro.observe(set); });
+  }, 'early');
+
   /* Cubes against the edge of a photo never animate on their own */
   LL.register('cubeEdges', () => {
     document.querySelectorAll('[data-cube-set^="edge"] [data-cube], .home-hero_cube').forEach((cube) => {
@@ -482,20 +536,33 @@
   const LL = window.LiveLegends;
 
   /* Parallax on every photo (.u-cover). Skipped where another animation owns the image.
-     Set up before the homepage loader (phase 'ready'), so the hero image does not jump after the Flip. */
-  const PARALLAX = { shift: 7, scale: 1.16, scrub: 1 };
+     Set up before the homepage loader (phase 'ready'), so the hero image does not jump after the Flip.
+     No slide on load: every photo jumps straight to its scroll position on load, after the loader and after
+     each refresh, so it never visibly moves against the text background. Photos already in view start at the
+     beginning of their range (clamp). The shift (6%) stays inside the zoom margin (scale 1.16 = 8% per side),
+     so no white edge appears while scrolling. */
+  const PARALLAX = { shift: 6, scale: 1.16, scrub: 1 };
   const PARALLAX_SELECTOR = '.u-cover, [data-parallax]';
   const PARALLAX_SKIP = '[data-infinite-grid-init], .lab-modal, .team-card, .navbar_component, .thrive_image-item, .hero-split_preview, [data-no-parallax]';
   LL.register('imageMotion', () => {
     if (LL.reduceMotion) return;
+    const tweens = [];
     document.querySelectorAll(PARALLAX_SELECTOR).forEach((img) => {
       const frame = img.parentElement;
       if (!frame || img.closest(PARALLAX_SKIP)) return;
       if (getComputedStyle(frame).position === 'static') frame.style.position = 'relative';
       frame.style.overflow = 'hidden';
       gsap.set(img, { scale: PARALLAX.scale, transformOrigin: 'center center', willChange: 'transform' });
-      gsap.fromTo(img, { yPercent: -PARALLAX.shift }, { yPercent: PARALLAX.shift, ease: 'none', scrollTrigger: { trigger: frame, start: 'top bottom', end: 'bottom top', scrub: PARALLAX.scrub, invalidateOnRefresh: true } });
+      tweens.push(gsap.fromTo(img, { yPercent: -PARALLAX.shift }, {
+        yPercent: PARALLAX.shift,
+        ease: 'none',
+        scrollTrigger: { trigger: frame, start: 'clamp(top bottom)', end: 'bottom top', scrub: PARALLAX.scrub, invalidateOnRefresh: true }
+      }));
     });
+    const snap = () => tweens.forEach((t) => { if (t.scrollTrigger) t.progress(t.scrollTrigger.progress); });
+    snap();
+    ScrollTrigger.addEventListener('refresh', snap);
+    window.addEventListener('loader:done', () => { ScrollTrigger.refresh(); snap(); }, { once: true });
   });
 
   /* Background videos ([data-hero-video]) and the small "Play video" preview cards ([data-hero-preview]) */
