@@ -1258,7 +1258,8 @@
       arrow.setAttribute('data-dock-arrow', '');
       links[0].insertBefore(arrow, back);
     }
-    Object.assign(links[0].style, { opacity: '0.75' });
+    /* "Back to filters" gets less padding than the red segment label, so the two parts stay in proportion */
+    Object.assign(links[0].style, { opacity: '0.75', padding: '0 1.25em' });
     Object.assign(links[1].style, { backgroundColor: 'var(--_colors---brand--red)', opacity: '1', cursor: 'default' });
     links[1].removeAttribute('href');
     const label = dock.querySelector('[data-dock-category]');
