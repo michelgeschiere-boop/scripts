@@ -2,7 +2,7 @@
    <script defer src="https://cdn.jsdelivr.net/gh/michelgeschiere-boop/scripts@COMMIT/ikibeer.js"></script>
    Pin a commit (not @main) so a change only goes live when the tag in Webflow is updated; jsDelivr caches @main for up to 7 days.
    Contents, in order:
-   1. Map filter: pins follow the Restaurants and bars / Shops filters, the map refits, a colour per type.
+   1. Map filter: pins follow the Restaurants and bars / Shops filters, the map refits, a colour per type (language-independent).
    2. External links open in a new tab.
    3. Behold Instagram feed (Gallery, Moments), only when Behold - Feed ID is filled.
    4. Moment dates as "October 2026" ([data-date-format="month-year"]).
@@ -12,8 +12,13 @@
 /* iKi: map pins follow filters + refit, colour per type */
 !function(){var L,d=document,A="data-locator-",S=function(x){return"["+A+x+"]"},Q=function(c,s){return c.querySelectorAll(s)};try{Object.defineProperty(window,"maplibregl",{configurable:!0,get:function(){return L},set:function(v){L=v;try{var p=v.Map.prototype,o=p.addControl;p.addControl=function(){this.getContainer().__ikiMap=this;return o.apply(this,arguments)}}catch(e){}}})}catch(e){}
 var k=".store-locator_marker[data-type=",n=":not([data-active=true])",f=".filter_button[data-filter=",s=d.createElement("style");s.textContent=k+"shop]"+n+","+k+"wholesale]"+n+"{background-color:var(--_colors---neutral--ink)}"+f+'"restaurant bar"]::before,'+f+"shop]::before{content:'';display:inline-block;width:.55em;height:.55em;margin-right:.5em;border-radius:50%;background:var(--_colors---brand--seal)}"+f+"shop]::before{background:var(--_colors---neutral--ink)}.is-active"+f+"shop]::before{background:currentColor}";d.head.appendChild(s);
+/* iKi 30 Oct 2026: the type label (Restaurant / Shop / Wholesale) is translated by Weglot, so the pin colour and the
+   filter chips use a language-independent value: read before Weglot translates, with a word list as fallback for
+   pages that arrive translated (Weglot subdirectories). */
+function K(v){v=String(v).trim().toLowerCase();return/shop|winkel|laden|gesch|einzelh|magasin|boutique|commerce|sklep|tienda|negozio/.test(v)?"shop":/wholesale|groothandel|gro(ss|\u00df)handel|grossiste|hurtown|mayorista|ingrosso/.test(v)?"wholesale":/restaur|ristor/.test(v)?"restaurant":/\bbar/.test(v)?"bar":v}
+Q(d,"[data-filter-item]").forEach(function(i){var s=i.querySelector("[data-filter-source]"),v=s&&s.textContent.trim();v&&!i.hasAttribute("data-filter-value")&&i.setAttribute("data-filter-value",K(v))});
 function g(i,a){return parseFloat(String(i.getAttribute(A+a)).replace(",","."))}
-function y(c,fit){var it={},pts=[];Q(c,S("item")).forEach(function(i){it[i.getAttribute(A+"id")]=i});Q(c,S("marker")).forEach(function(m){var i=it[m.getAttribute(A+"marker")];if(!i)return;var t=((i.querySelector("[data-filter-source]")||{}).textContent||"").trim().toLowerCase();m.setAttribute("data-type",t);var h=(i.closest(".w-dyn-item")||i).hasAttribute("data-iki-hidden");m.style.display=h?"none":"";h||pts.push([g(i,"lng"),g(i,"lat")])});var map=(c.querySelector(S("map"))||{}).__ikiMap;if(fit&&map&&pts.length){var b=new L.LngLatBounds;pts.forEach(function(p){b.extend(p)});map.fitBounds(b,{padding:64,maxZoom:13,duration:700})}}
+function y(c,fit){var it={},pts=[];Q(c,S("item")).forEach(function(i){it[i.getAttribute(A+"id")]=i});Q(c,S("marker")).forEach(function(m){var i=it[m.getAttribute(A+"marker")];if(!i)return;var t=i.getAttribute("data-filter-value")||K(((i.querySelector("[data-filter-source]")||{}).textContent||""));m.setAttribute("data-type",t);var h=(i.closest(".w-dyn-item")||i).hasAttribute("data-iki-hidden");m.style.display=h?"none":"";h||pts.push([g(i,"lng"),g(i,"lat")])});var map=(c.querySelector(S("map"))||{}).__ikiMap;if(fit&&map&&pts.length){var b=new L.LngLatBounds;pts.forEach(function(p){b.extend(p)});map.fitBounds(b,{padding:64,maxZoom:13,duration:700})}}
 Q(d,S("init")).forEach(function(c){var t;new MutationObserver(function(ms){var a=ms.some(function(m){return m.type=="attributes"});clearTimeout(t);t=setTimeout(function(){y(c,a)},a?300:60)}).observe(c,{subtree:!0,childList:!0,attributes:!0,attributeFilter:["data-iki-hidden"]})})}();
 ;
 /* iKi 30 Oct 2026: every link to another website opens in a new tab (also CMS links, rich text and links added by scripts). Same-site, mailto and tel links are left alone. */
