@@ -1,6 +1,7 @@
 /* iKi Beers – site CSS for ikibeer.com (Webflow). Loaded in Site settings > Custom code > Head:
-   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/michelgeschiere-boop/scripts@COMMIT/ikibeer.min.css">
-   Pin a commit (not @main), same as ikibeer.js. jsDelivr minifies the .min.css on the fly; this file stays readable.
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/michelgeschiere-boop/scripts@COMMIT/ikibeer.css">
+   Pin a commit (not @main), same as ikibeer.js. Do NOT load ikibeer.min.css: jsDelivr's on-the-fly minifier turns the
+   0% colour stops in the color-mix() gradients into 0, which drops the line-up glow (checked 4 Nov 2026).
    Base, states and homepage motion CSS stay in the Utility component (embeds), so the Designer keeps rendering them.
    This file replaces the inline <style> blocks iki-css-v2 (head) and iki-css-round7 + iki-css-round11 (footer).
    Moving round 7 and 11 from the footer to the head was checked on 4 Nov 2026: no computed-style difference on
