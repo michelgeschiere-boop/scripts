@@ -1,0 +1,170 @@
+/* iKi Beers – site CSS for ikibeer.com (Webflow). Loaded in Site settings > Custom code > Head:
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/michelgeschiere-boop/scripts@COMMIT/ikibeer.min.css">
+   Pin a commit (not @main), same as ikibeer.js. jsDelivr minifies the .min.css on the fly; this file stays readable.
+   Base, states and homepage motion CSS stay in the Utility component (embeds), so the Designer keeps rendering them.
+   This file replaces the inline <style> blocks iki-css-v2 (head) and iki-css-round7 + iki-css-round11 (footer).
+   Moving round 7 and 11 from the footer to the head was checked on 4 Nov 2026: no computed-style difference on
+   home, flavours, for business and find iKi, mobile and desktop.
+   4 Nov 2026 */
+
+/* ROUNDS 2-6 (22 Oct 2026). Loader, hero, slider, line-up, spin, collage, contact, press. Source: build kit webflow/03b-global-styling-css-v2.html */
+
+/* Light page behind everything, also before the loader is gone */
+html{background-color:var(--_colors---neutral--rice-white)}
+
+/* Loader: display:none in Webflow (so never in the Designer or Editor). The head script adds .is-intro on the
+   first visit of a session outside the Editor, which shows it; .is-intro-seen once it played */
+html.is-intro [data-loading-container]{display:block}
+html.is-intro-seen [data-loading-container]{display:none!important}
+/* Loader cards come from the CMS list (Loader > Photo 1-6): the list wrappers do not take part in the layout */
+[data-loading-cards-list] .w-dyn-list,[data-loading-cards-list] .w-dyn-items,[data-loading-cards-list] .w-dyn-item{display:contents}
+[data-loading-cards-list] .w-dyn-empty{display:none}
+/* Designer-only clutter: the product modal, the glows and the bottle shadows are display:none in Webflow
+   (the Designer does not run the script or the attribute states). The head script adds html.iki-live on the site. */
+html.iki-live .hotspot-modal,html.iki-live .product-stage_glow,html.iki-live .product-stage_shadow,html.iki-live .home-flavours_glow{display:block}
+
+/* Hero logo: centred without a CSS transform, so the scroll fade (GSAP) owns the transform */
+html .home-hero_logo{left:0;right:0;margin-left:auto;margin-right:auto;transform:none;top:calc(43% - 3.25em)}
+@media screen and (max-width:767px){html .home-hero_logo{top:calc(43% - 2.4em)}}
+html .home-hero_image{will-change:transform}
+
+/* Radial flavour slider: flatter arc on desktop, far bottles fade (script), click areas beside the active bottle */
+@media screen and (min-width:992px){html [data-radial-slider-init]{--slider-rotate:15deg;--slider-radius:300%}}
+html [data-radial-slider-init]{position:relative}
+.radial-slider_hit{position:absolute;z-index:3;display:block;margin:0;padding:0;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.radial-slider_hit:focus{outline:0}
+html [data-radial-slider-drag-status="click"] .radial-slider_list{cursor:default}
+[data-radial-slider-hover="prev"] [data-radial-slider-item-status="active"] .radial-slider_bottle{transform:translateX(.75em)}
+[data-radial-slider-hover="next"] [data-radial-slider-item-status="active"] .radial-slider_bottle{transform:translateX(-.75em)}
+
+/* For venues and distributors: up to three bottles sit in a three-column grid (no slider, glow not clipped) */
+@media screen and (min-width:768px){
+  html .slider_track.is-lineup:not(:has(> :nth-child(4))){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:2.5em;overflow:visible;scroll-snap-type:none}
+  html .slider_track.is-lineup:not(:has(> :nth-child(4))) > *{width:auto;min-width:0;flex:none}
+  html [data-slider]:has(.slider_track.is-lineup):not(:has(.slider_track.is-lineup > :nth-child(4))) .home-business_controls{display:none}
+}
+
+/* Rotating bottle on hover (script adds the animated image next to the photo) */
+.iki-spin{position:absolute;z-index:1;width:auto;max-width:none;transform:translateX(-50%);pointer-events:none;opacity:0;transition:opacity .25s var(--ease-out)}
+.iki-spin-src{transition:opacity .25s var(--ease-out)}
+.is-spinning.is-spin-ready .iki-spin{opacity:1}
+.is-spinning.is-spin-ready .iki-spin-src{opacity:0}
+@media (hover:hover){.flavour-card:hover .iki-spin{transform:translate(-50%,-.5em)}}
+
+/* iKi means life: the photos move as a whole (script), the content stays readable on top */
+[data-interactive-collage-item]{will-change:transform}
+
+/* Contact sidebar: no line under the last group */
+.contact-card_group:last-child{border-bottom:0}
+/* ROUND 3 (21 Oct 2026) */
+/* Our flavours: bottles scale with the viewport height so title, bottles and name fit on one screen */
+@media screen and (min-width:768px){
+  html [data-radial-slider-init]{--bottle-h:clamp(21em,calc(100svh - 21em),41.25em)}
+  html .radial-slider_bottle{height:var(--bottle-h);width:calc(var(--bottle-h)*.3212)}
+  html .home-flavours_inner{padding-top:4.5em}
+  html .radial-slider_controls{margin-top:2.5em}
+}
+/* Read our story: white button, hover like the other buttons */
+.tea-zoom_link{transition:background-color .3s ease,color .3s ease}
+@media (hover:hover){.tea-zoom_link:hover{background-color:var(--_colors---neutral--rice-white)}}
+/* Our story hero: the photo never pushes below the fold */
+@media screen and (min-width:992px){html .story-hero_visual{max-height:calc(100svh - 9em)}}
+/* In the press: the whole card is the link, the other cards dim on hover (like the menu) */
+.press-card{position:relative;transition:opacity .3s ease}
+.press-card_link::after{content:"";position:absolute;inset:0;z-index:1}
+@media (hover:hover){.press_grid:has(.press-card:hover) .press-card:not(:hover){opacity:.45}}
+/* ROUND 5 (22 Oct 2026) */
+/* For venues and distributors on mobile: the bottle in view sits in the middle, neighbours peek in on both sides */
+@media screen and (max-width:767px){
+  html .slider_track.is-lineup{padding-left:15%;padding-right:15%;scroll-padding-inline:15%;column-gap:1.5em}
+  html .slider_track.is-lineup > *{flex:0 0 100%;scroll-snap-align:center}
+  html .slider_track.is-lineup .lineup-card_row{padding-right:0}
+  html [data-slider]:has(.slider_track.is-lineup) .home-business_controls{justify-content:center}
+}
+/* Our story, Ikigai on mobile: the diagram fits the screen and the labels are readable (offsets recalculated
+   for the bigger label size, in label em) */
+@media screen and (max-width:767px){
+  html .ikigai_diagram{font-size:2.3vw}
+  html .ikigai_label{font-size:1.45em;width:6.6em;line-height:1.3}
+  html .ikigai_label.is-love{top:4.1em;margin-left:-3.3em}
+  html .ikigai_label.is-good{left:2em;top:10.2em}
+  html .ikigai_label.is-world{right:2em;top:10.2em}
+  html .ikigai_center-label{font-size:1.25em}
+}
+/* Range and packaging on mobile: every flavour is a small card, label above value, no horizontal reading */
+@media screen and (max-width:767px){
+  html .range_row.is-head{display:none}
+  html .range_row{grid-template-columns:1fr 1fr;column-gap:1.25em;row-gap:1em;padding-top:1.5em;padding-bottom:1.5em;align-items:start}
+  html .range_row .range_cell:first-child{grid-column:1 / -1}
+  html .range_row .range_cell:first-child > *{font-size:1.25em}
+  .range_cell[data-label]:not(:first-child)::before{content:attr(data-label);display:block;margin-bottom:.3em;color:var(--_theme---caption);font-size:.8125em;line-height:1.3}
+}
+/* Store locator (MapLibre): markers and controls in iKi style */
+.maplibregl-ctrl-attrib{font-size:11px}
+/* ROUND 6 (22 Oct 2026): 18+ age gate (component "Age gate" on every page). display:none in Webflow; the head
+   script adds html.is-age-gate until the visitor confirms (remembered 30 days), never in the Editor */
+html.is-age-gate .age-gate{display:flex}
+html.is-age-gate,html.is-age-gate body{overflow:hidden}
+.age-gate{transition:opacity .5s var(--ease-out)}
+html.is-age-gate-leaving .age-gate{opacity:0;pointer-events:none}
+.age-gate[data-age-gate-status="denied"] .age-gate_denied{display:block}
+
+/* iKi ROUND 7 (26 Oct 2026): store locator. The MapLibre hint ("Use cmd + scroll to zoom") stays inside the map, under
+   the navbar, with a light tint and a small pill instead of a dark full-screen layer */
+.maplibregl-cooperative-gesture-screen{z-index:2!important;padding:1rem!important;background:color-mix(in srgb,var(--_colors---neutral--ink) 8%,transparent)!important;font-size:inherit!important}
+.maplibregl-cooperative-gesture-screen .maplibregl-desktop-message,.maplibregl-cooperative-gesture-screen .maplibregl-mobile-message{padding:.55em 1.1em;border-radius:100vw;background:var(--_colors---neutral--ink);color:var(--_colors---neutral--rice-white);font-size:.875rem;line-height:1.3}
+/* Places: no box (Osmo default inset line, it did not line up with the text) and no browser focus box on click;
+   a clean ring for keyboard users; the active place gets its name in seal red */
+[data-locator-item][data-active="true"]{box-shadow:none!important}
+.store-locator_item:focus{outline:0}
+.store-locator_item:focus-visible{outline:2px solid var(--_colors---neutral--ink);outline-offset:-2px;border-radius:.25em}
+.store-locator_item .store-locator_name{transition:color .25s ease}
+.store-locator_item[data-active="true"] .store-locator_name{color:var(--_colors---brand--seal)}
+@media (hover:hover){.store-locator_item:hover .store-locator_name{color:var(--_colors---brand--seal)}}
+/* Active pin: dark with a soft ring instead of the outline (no transform, MapLibre positions the pin with it) */
+.store-locator_marker{transition:background-color .25s ease,box-shadow .25s ease}
+[data-locator-marker][data-active="true"]{outline:0!important}
+.store-locator_marker[data-active="true"]{z-index:2;background-color:var(--_colors---neutral--ink);box-shadow:0 0 0 .375em color-mix(in srgb,var(--_colors---brand--seal) 30%,transparent)}
+.store-locator_marker:focus{outline:0}
+.store-locator_marker:focus-visible{box-shadow:0 0 0 3px var(--_colors---neutral--ink)}
+.store-locator_list{overscroll-behavior:contain}
+/* ROUND 8 (27 Oct 2026): For venues and distributors. No coloured glow per flavour any more (client: too disco);
+   every bottle gets the same calm, warm light from behind, a little brighter at the bottle */
+html .u-theme-dark .lineup-card .product-stage_glow{background:radial-gradient(closest-side,color-mix(in srgb,var(--_colors---neutral--rice-white) 7%,transparent) 0%,color-mix(in srgb,var(--_colors---neutral--rice-white) 2.5%,transparent) 50%,transparent 100%)}
+/* ROUND 9 (28 Oct 2026): Request samples form. "What would you like?" chips (samples / price indication / marketing
+   materials / press kit, several allowed): the ticked chip gets an ink border, the checkbox follows the text colour */
+.form_choice{transition:border-color .2s ease,box-shadow .2s ease}
+.form_choice-input{accent-color:var(--_theme---text)}
+.form_choice:has(input:checked){border-color:var(--_theme---text);box-shadow:inset 0 0 0 1px var(--_theme---text)}
+.form_choice:has(input:focus-visible){outline:2px solid var(--_theme---text);outline-offset:2px}
+@media (hover:hover){.form_choice:hover{border-color:var(--_theme---caption)}.form_choice:has(input:checked):hover{border-color:var(--_theme---text)}}
+
+/* ROUND 11 (4 Nov 2026): mobile fixes after go-live */
+@media screen and (max-width:767px){
+  /* Hospitality, wholesale and distribution (CTA Center, dark variant on For business): everything left aligned */
+  html #distribution .cta_content{align-items:flex-start}
+  html #distribution .cta_content .text-align-center{text-align:left}
+  html #distribution .button-group.is-center{justify-content:flex-start}
+  /* Range and packaging: note under the title, every flavour a calm list (label left, value right) */
+  html .range_header{flex-direction:column;align-items:flex-start;row-gap:.75em;margin-bottom:1.5em}
+  html .range_row{display:flex;flex-direction:column;align-items:stretch;row-gap:0;padding-top:1.5em;padding-bottom:1.25em}
+  html .range_row .range_cell:first-child{margin-bottom:.5em}
+  html .range_row .range_cell:not(:first-child){display:flex;justify-content:space-between;align-items:baseline;column-gap:1.5em;padding-top:.5em;padding-bottom:.5em;text-align:right}
+  html .range_cell[data-label]:not(:first-child)::before{margin-bottom:0;flex:none;text-align:left;font-size:1em}
+  /* Certificates (For business hero): logos spread over the full width, note underneath */
+  html .business-hero_certs{display:grid;grid-template-columns:repeat(3,auto);justify-content:space-between;align-items:center;row-gap:1em;margin-top:1.5em}
+  html .business-hero_certs > :last-child{grid-column:1 / -1}
+  /* Store locator search: field exactly as high as the button */
+  html .locator_search-form{align-items:stretch}
+  html .locator_search-input{height:auto;min-height:3em;flex:1 1 auto;min-width:0}
+  html .locator_search .w-form{margin-bottom:0}
+  /* Radial flavour slider: smaller bottles, clear of the title */
+  html .radial-slider_bottle{width:6.75em;height:21em}
+  html .radial-slider{margin-top:2.5em}
+  /* For venues and distributors: bottle card like the product page, soft floor under the bottle, name and ABV centred below */
+  html .lineup-card{row-gap:1em}
+  html .lineup-card_stage{height:18.5em;padding-bottom:2em;--stage-pad:2em;--glow-width:100%;--glow-top:55%;--shadow-width:7em}
+  html .lineup-card_image{height:14.5em}
+  html .u-theme-dark .lineup-card .product-stage_shadow{background:radial-gradient(closest-side,color-mix(in srgb,var(--_colors---neutral--rice-white) 14%,transparent),transparent)}
+  html .lineup-card_row{flex-direction:column;align-items:center;row-gap:.35em;padding-right:0;text-align:center}
+}
