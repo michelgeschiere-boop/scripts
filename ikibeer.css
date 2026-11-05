@@ -169,3 +169,13 @@ html .u-theme-dark .lineup-card .product-stage_glow{background:radial-gradient(c
   html .u-theme-dark .lineup-card .product-stage_shadow{background:radial-gradient(closest-side,color-mix(in srgb,var(--_colors---neutral--rice-white) 14%,transparent),transparent)}
   html .lineup-card_row{flex-direction:column;align-items:center;row-gap:.35em;padding-right:0;text-align:center}
 }
+
+/* 5 Nov 2026: store locator popup. A pin of a place that is not in the list (past "Max places - List", e.g. on the
+   homepage) shows the place's card in a small popup on the map, styled like the list */
+.iki-map-popup{z-index:3}
+.iki-map-popup .maplibregl-popup-content,.iki-map-popup .mapboxgl-popup-content{padding:1.125em 2.5em 1.125em 1.25em;border-radius:.75em;background:var(--_colors---neutral--rice-white);color:var(--_colors---neutral--ink);box-shadow:0 .75em 2em color-mix(in srgb,var(--_colors---neutral--ink) 16%,transparent);font-size:1rem}
+.iki-map-popup .maplibregl-popup-tip,.iki-map-popup .mapboxgl-popup-tip{display:none}
+.iki-map-popup .maplibregl-popup-close-button,.iki-map-popup .mapboxgl-popup-close-button{top:.5em;right:.5em;width:1.75em;height:1.75em;padding:0;border-radius:100vw;color:var(--_colors---neutral--ink);font-size:1.125rem;line-height:1}
+@media (hover:hover){.iki-map-popup .maplibregl-popup-close-button:hover,.iki-map-popup .mapboxgl-popup-close-button:hover{background:color-mix(in srgb,var(--_colors---neutral--ink) 6%,transparent)}}
+.iki-map-popup_card .store-locator_name{font-size:1.125rem;margin-bottom:.35em}
+.iki-map-popup_card .store-locator_links{margin-top:.75em}
