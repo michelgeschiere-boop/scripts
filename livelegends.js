@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.2.0 | built 2026-11-17 | source: src/ */
+/*! Live Legends site scripts v1.2.1 | built 2026-11-17 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -140,8 +140,21 @@
   LL.mountSilentVideo = (video, url, opts = {}) => {
     const info = LL.parseVideo(url);
     if (!info) return null;
-    const fadeIn = (el) => { el.style.opacity = '1'; };
-    const prepFade = (el) => { if (opts.fade) { el.style.opacity = '0'; el.style.transition = 'opacity 1s ease'; } };
+    /* el.videoReady resolves true once the video really plays, false when it fails (the homepage loader waits for it) */
+    let settle;
+    const ready = new Promise((resolve) => { settle = resolve; });
+    let done = false;
+    const finish = (el, ok) => {
+      if (done) return;
+      done = true;
+      if (opts.fade) {
+        /* During the homepage loader the media is still hidden: no crossfade from the image, the video is simply there */
+        if (LL.html.classList.contains('is-loading')) el.style.transition = 'none';
+        el.style.opacity = ok ? '1' : '0';
+      }
+      settle(ok);
+    };
+    const prepFade = (el) => { if (opts.fade) { el.style.opacity = '0'; el.style.transition = 'opacity 0.8s ease'; } };
 
     if (info.type === 'iframe') {
       const box = document.createElement('div');
@@ -150,8 +163,7 @@
       box.setAttribute('aria-hidden', 'true');
       Object.assign(box.style, { overflow: 'hidden', pointerEvents: 'none', containerType: 'size' });
       if (getComputedStyle(video).position === 'static') box.style.position = 'relative';
-      const ratio = info.ratio || 16 / 9;
-      box.style.setProperty('--video-ratio', ratio);
+      box.style.setProperty('--video-ratio', info.ratio || 16 / 9);
       const frame = document.createElement('iframe');
       frame.src = info.embed(true);
       frame.title = 'Background video';
@@ -164,45 +176,44 @@
       prepFade(frame);
       box.appendChild(frame);
       video.replaceWith(box);
+      box.videoReady = ready;
       /* Real aspect ratio of Vimeo videos (portrait, 4:5, 21:9 …) so the crop is right */
       if (info.provider === 'vimeo') {
         fetch('https://vimeo.com/api/oembed.json?url=' + encodeURIComponent('https://vimeo.com/' + info.id))
           .then((r) => (r.ok ? r.json() : null))
           .then((d) => { if (d && d.width && d.height) box.style.setProperty('--video-ratio', d.width / d.height); })
           .catch(() => {});
+        /* Vimeo tells us when it really plays (first timeupdate) */
+        window.addEventListener('message', function onMsg(e) {
+          if (e.source !== frame.contentWindow) return;
+          let d = e.data; try { d = typeof d === 'string' ? JSON.parse(d) : d; } catch (err) { return; }
+          if (d && (d.event === 'play' || d.event === 'timeupdate' || d.event === 'playProgress')) { finish(frame, true); window.removeEventListener('message', onMsg); }
+        });
+        frame.addEventListener('load', () => {
+          ['play', 'timeupdate'].forEach((ev) => frame.contentWindow.postMessage({ method: 'addEventListener', value: ev }, '*'));
+        }, { once: true });
       }
-      if (opts.fade) {
-        let shown = false;
-        const show = () => { if (!shown) { shown = true; fadeIn(frame); } };
-        if (info.provider === 'vimeo') {
-          window.addEventListener('message', function onMsg(e) {
-            if (e.source !== frame.contentWindow || !/vimeo\.com$/.test(new URL(e.origin).hostname)) return;
-            let d = e.data; try { d = typeof d === 'string' ? JSON.parse(d) : d; } catch (err) { return; }
-            if (d && (d.event === 'play' || d.event === 'playProgress' || d.event === 'timeupdate')) { show(); window.removeEventListener('message', onMsg); }
-          });
-          frame.addEventListener('load', () => {
-            ['play', 'timeupdate'].forEach((ev) => frame.contentWindow.postMessage({ method: 'addEventListener', value: ev }, '*'));
-          }, { once: true });
-        }
-        frame.addEventListener('load', () => setTimeout(show, info.provider === 'vimeo' ? 4000 : 1200), { once: true });
-      }
+      /* Fallback for players that don't report playback (YouTube, Bunny) and a safety net for Vimeo */
+      frame.addEventListener('load', () => setTimeout(() => finish(frame, true), info.provider === 'vimeo' ? 4000 : 1200), { once: true });
       return box;
     }
 
     video.muted = true; video.defaultMuted = true; video.playsInline = true; video.loop = true;
     video.setAttribute('muted', ''); video.setAttribute('playsinline', '');
+    video.videoReady = ready;
     prepFade(video);
-    if (opts.fade) video.addEventListener('playing', () => fadeIn(video), { once: true });
-    video.addEventListener('error', () => { if (opts.fade) video.style.opacity = '0'; }, { once: true });
+    video.addEventListener('playing', () => finish(video, true), { once: true });
+    video.addEventListener('error', () => finish(video, false), { once: true });
     const play = () => video.play().catch(() => {});
     if (info.type === 'hls' && !video.canPlayType('application/vnd.apple.mpegurl')) {
       LL.loadHls().then((Hls) => {
-        if (!Hls || !Hls.isSupported()) return;
+        if (!Hls || !Hls.isSupported()) return finish(video, false);
         const hls = new Hls({ capLevelToPlayerSize: true });
+        hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) finish(video, false); });
         hls.loadSource(info.src);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, play);
-      }).catch(() => {});
+      }).catch(() => finish(video, false));
     } else {
       if (video.getAttribute('src') !== info.src) { video.src = info.src; video.load(); }
       play(); video.addEventListener('canplay', play, { once: true });
@@ -633,19 +644,23 @@
     gsap.set([...content, ...cubes], { autoAlpha: 0 });
     media.classList.add('is-loader-state');
     gsap.set(media, { clipPath: LOGO_START, autoAlpha: 0, scale: 0.94 });
-    gsap.to(media, { autoAlpha: 1, scale: 1, duration: LL.D.slow, ease: LL.EASE });
     const progress = document.createElement('div');
     progress.className = 'loader_progress';
     loader.appendChild(progress);
-    const progressTween = gsap.fromTo(progress, { scaleX: 0 }, { scaleX: 0.9, duration: 2.2, ease: 'power1.out', transformOrigin: 'left center' });
-    const video = media.querySelector('video');
+    const progressTween = gsap.fromTo(progress, { scaleX: 0 }, { scaleX: 0.9, duration: 2.6, ease: 'power1.out', transformOrigin: 'left center' });
+    /* The media only appears in the logo shape once the background video really plays (any source),
+       so you never see the photo first and then the video. No video, or it takes > 3.5s → the photo is shown. */
+    const bgVideo = media.querySelector('[data-hero-video]');
     const videoReady = new Promise((resolve) => {
-      if (!video || video.readyState >= 3) return resolve();
-      video.addEventListener('canplay', resolve, { once: true });
-      setTimeout(resolve, 2000);
+      if (!bgVideo || !bgVideo.videoReady) return resolve();
+      bgVideo.videoReady.then(resolve);
+      setTimeout(resolve, 3500);
     });
-    const hold = new Promise((resolve) => setTimeout(resolve, 600));
-    Promise.all([videoReady, hold, document.fonts.ready]).then(() => {
+    const appear = () => new Promise((resolve) => {
+      gsap.to(media, { autoAlpha: 1, scale: 1, duration: LL.D.base, ease: LL.EASE, onComplete: resolve });
+    });
+    const hold = () => new Promise((resolve) => setTimeout(resolve, 350));
+    Promise.all([videoReady, document.fonts.ready]).then(appear).then(hold).then(() => {
       progressTween.kill();
       gsap.to(progress, { scaleX: 1, duration: 0.3, ease: LL.EASE, transformOrigin: 'left center' });
       gsap.set(media, { clearProps: 'scale,transform' });
