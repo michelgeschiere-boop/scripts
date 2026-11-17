@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.2.1 | built 2026-11-17 | source: src/ */
+/*! Live Legends site scripts v1.2.2 | built 2026-11-17 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -647,19 +647,21 @@
     const progress = document.createElement('div');
     progress.className = 'loader_progress';
     loader.appendChild(progress);
-    const progressTween = gsap.fromTo(progress, { scaleX: 0 }, { scaleX: 0.9, duration: 2.6, ease: 'power1.out', transformOrigin: 'left center' });
+    /* Mobile: short wait for the video and a faster opening (slower network + CPU, people expect it quicker) */
+    const fast = LL.mobile.matches;
+    const progressTween = gsap.fromTo(progress, { scaleX: 0 }, { scaleX: 0.9, duration: fast ? 1.4 : 2.6, ease: 'power1.out', transformOrigin: 'left center' });
     /* The media only appears in the logo shape once the background video really plays (any source),
        so you never see the photo first and then the video. No video, or it takes > 3.5s → the photo is shown. */
     const bgVideo = media.querySelector('[data-hero-video]');
     const videoReady = new Promise((resolve) => {
       if (!bgVideo || !bgVideo.videoReady) return resolve();
       bgVideo.videoReady.then(resolve);
-      setTimeout(resolve, 3500);
+      setTimeout(resolve, fast ? 1200 : 3500);
     });
     const appear = () => new Promise((resolve) => {
-      gsap.to(media, { autoAlpha: 1, scale: 1, duration: LL.D.base, ease: LL.EASE, onComplete: resolve });
+      gsap.to(media, { autoAlpha: 1, scale: 1, duration: fast ? 0.45 : LL.D.base, ease: LL.EASE, onComplete: resolve });
     });
-    const hold = () => new Promise((resolve) => setTimeout(resolve, 350));
+    const hold = () => new Promise((resolve) => setTimeout(resolve, fast ? 100 : 350));
     Promise.all([videoReady, document.fonts.ready]).then(appear).then(hold).then(() => {
       progressTween.kill();
       gsap.to(progress, { scaleX: 1, duration: 0.3, ease: LL.EASE, transformOrigin: 'left center' });
@@ -668,6 +670,7 @@
       media.classList.remove('is-loader-state');
       gsap.set(media, { zIndex: 101, autoAlpha: 1 });
       gsap.timeline({ onComplete: done })
+        .timeScale(fast ? 1.6 : 1)
         .add(Flip.from(state, { duration: 1.5, ease: LL.EASE_IO, scale: false }), 0.25)
         .fromTo(media, { clipPath: LOGO_START }, { clipPath: LOGO_END, duration: 1.5, ease: LL.EASE_IO }, 0.25)
         .to(loader, { autoAlpha: 0, duration: 0.7, ease: LL.EASE }, 0.9)
