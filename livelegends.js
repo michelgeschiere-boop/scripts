@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.1.1 | built 2026-10-07 | source: src/ */
+/*! Live Legends site scripts v1.2.0 | built 2026-11-17 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -68,13 +68,146 @@
   /* Read a URL from a CMS-bound element (link href or text) */
   LL.readUrl = (el) => (el ? ((el.getAttribute('href') || el.textContent || '').trim()) : '');
 
-  /* YouTube / Vimeo → embed URL; anything else is treated as a video file */
+  /* Any video link → how to play it. Returns null for an empty/invalid URL, otherwise
+     { type: 'file' | 'hls' | 'iframe', src, provider, embed(background) }.
+     - file: .mp4 .webm .mov .m4v .ogv (incl. Bunny play_720p.mp4, Vimeo file/progressive links); unknown URLs too
+     - hls: .m3u8 (Bunny playlist.m3u8)
+     - iframe: Vimeo (vimeo.com/ID, /ID/HASH, player.vimeo.com/video/ID?h=, channels/showcase), YouTube (watch, youtu.be,
+       shorts, embed, live), Bunny Stream (iframe.mediadelivery.net/embed|play/LIB/GUID).
+       embed(true) = muted looping background without controls, embed(false) = normal player with sound (fullscreen modal). */
+  LL.parseVideo = (raw) => {
+    raw = (raw || '').trim();
+    if (!raw) return null;
+    let u;
+    try { u = new URL(raw, location.href); } catch (e) { return null; }
+    const host = u.hostname.replace(/^(www|m)\./, '');
+    const path = u.pathname;
+    const qs = (o) => new URLSearchParams(o).toString();
+    if (/\.(mp4|webm|mov|m4v|ogv)$/i.test(path)) return { type: 'file', src: u.href };
+    if (/\.m3u8$/i.test(path)) return { type: 'hls', src: u.href };
+    if (host.endsWith('vimeo.com')) {
+      const m = path.match(/(\d{5,})(?:\/([a-f0-9]{6,}))?/i);
+      if (m) {
+        const h = m[2] || u.searchParams.get('h');
+        const base = 'https://player.vimeo.com/video/' + m[1] + '?' + (h ? 'h=' + h + '&' : '');
+        return { type: 'iframe', provider: 'vimeo', id: m[1], src: base, embed: (bg) => base + (bg
+          ? qs({ background: 1, autoplay: 1, loop: 1, muted: 1, autopause: 0, dnt: 1 })
+          : qs({ autoplay: 1, title: 0, byline: 0, portrait: 0, dnt: 1 })) };
+      }
+    }
+    if (host === 'youtu.be' || host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) {
+      let id = host === 'youtu.be' ? path.slice(1).split('/')[0] : u.searchParams.get('v');
+      if (!id) { const m = path.match(/\/(?:shorts|embed|live|v)\/([\w-]{6,})/); id = m && m[1]; }
+      if (id) {
+        const base = 'https://www.youtube-nocookie.com/embed/' + id + '?';
+        return { type: 'iframe', provider: 'youtube', id, src: base, ratio: /\/shorts\//.test(path) ? 9 / 16 : 16 / 9, embed: (bg) => base + (bg
+          ? qs({ autoplay: 1, mute: 1, loop: 1, playlist: id, controls: 0, playsinline: 1, rel: 0, disablekb: 1, iv_load_policy: 3 })
+          : qs({ autoplay: 1, rel: 0, playsinline: 1 })) };
+      }
+    }
+    if (host.endsWith('mediadelivery.net')) {
+      const m = path.match(/\/(?:embed|play)\/(\d+)\/([\w-]+)/);
+      if (m) {
+        const base = 'https://iframe.mediadelivery.net/embed/' + m[1] + '/' + m[2] + '?';
+        return { type: 'iframe', provider: 'bunny', src: base, embed: (bg) => base + (bg
+          ? qs({ autoplay: true, loop: true, muted: true, preload: true, responsive: true })
+          : qs({ autoplay: true, preload: true, responsive: true })) };
+      }
+    }
+    return { type: 'file', src: u.href };
+  };
+
+  /* Embed URL for the fullscreen player (null = play as a video file) */
   LL.getEmbedUrl = (url) => {
-    let m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
-    if (m) return 'https://www.youtube.com/embed/' + m[1] + '?autoplay=1&rel=0&modestbranding=1';
-    m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-    if (m) return 'https://player.vimeo.com/video/' + m[1] + '?autoplay=1&title=0&byline=0&portrait=0';
-    return null;
+    const v = LL.parseVideo(url);
+    return v && v.type === 'iframe' ? v.embed(false) : null;
+  };
+
+  /* hls.js, only loaded when an .m3u8 has to play in a browser without native HLS */
+  LL.loadHls = () => LL._hls || (LL._hls = window.Hls ? Promise.resolve(window.Hls) : new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js';
+    s.onload = () => resolve(window.Hls);
+    s.onerror = reject;
+    document.head.appendChild(s);
+  }));
+
+  /* Play any video link silently in the place of a <video> element (background / preview).
+     File → the <video> itself. HLS → <video> + hls.js where needed. Vimeo/YouTube/Bunny → the <video> is swapped
+     for a cover-fitted iframe in a div with the same classes, so the existing layout CSS keeps working.
+     opts.fade: invisible until it actually plays (the image underneath stays in view until then).
+     Returns the element that ended up in the page, or null when there is nothing to play. */
+  LL.mountSilentVideo = (video, url, opts = {}) => {
+    const info = LL.parseVideo(url);
+    if (!info) return null;
+    const fadeIn = (el) => { el.style.opacity = '1'; };
+    const prepFade = (el) => { if (opts.fade) { el.style.opacity = '0'; el.style.transition = 'opacity 1s ease'; } };
+
+    if (info.type === 'iframe') {
+      const box = document.createElement('div');
+      box.className = video.className;
+      [...video.attributes].forEach((a) => { if (/^data-/.test(a.name)) box.setAttribute(a.name, a.value); });
+      box.setAttribute('aria-hidden', 'true');
+      Object.assign(box.style, { overflow: 'hidden', pointerEvents: 'none', containerType: 'size' });
+      if (getComputedStyle(video).position === 'static') box.style.position = 'relative';
+      const ratio = info.ratio || 16 / 9;
+      box.style.setProperty('--video-ratio', ratio);
+      const frame = document.createElement('iframe');
+      frame.src = info.embed(true);
+      frame.title = 'Background video';
+      frame.tabIndex = -1;
+      frame.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture; encrypted-media');
+      Object.assign(frame.style, {
+        position: 'absolute', top: '50%', left: '50%', border: '0', transform: 'translate(-50%, -50%)',
+        width: 'max(100%, calc(100cqh * var(--video-ratio)))', height: 'max(100%, calc(100cqw / var(--video-ratio)))'
+      });
+      prepFade(frame);
+      box.appendChild(frame);
+      video.replaceWith(box);
+      /* Real aspect ratio of Vimeo videos (portrait, 4:5, 21:9 …) so the crop is right */
+      if (info.provider === 'vimeo') {
+        fetch('https://vimeo.com/api/oembed.json?url=' + encodeURIComponent('https://vimeo.com/' + info.id))
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => { if (d && d.width && d.height) box.style.setProperty('--video-ratio', d.width / d.height); })
+          .catch(() => {});
+      }
+      if (opts.fade) {
+        let shown = false;
+        const show = () => { if (!shown) { shown = true; fadeIn(frame); } };
+        if (info.provider === 'vimeo') {
+          window.addEventListener('message', function onMsg(e) {
+            if (e.source !== frame.contentWindow || !/vimeo\.com$/.test(new URL(e.origin).hostname)) return;
+            let d = e.data; try { d = typeof d === 'string' ? JSON.parse(d) : d; } catch (err) { return; }
+            if (d && (d.event === 'play' || d.event === 'playProgress' || d.event === 'timeupdate')) { show(); window.removeEventListener('message', onMsg); }
+          });
+          frame.addEventListener('load', () => {
+            ['play', 'timeupdate'].forEach((ev) => frame.contentWindow.postMessage({ method: 'addEventListener', value: ev }, '*'));
+          }, { once: true });
+        }
+        frame.addEventListener('load', () => setTimeout(show, info.provider === 'vimeo' ? 4000 : 1200), { once: true });
+      }
+      return box;
+    }
+
+    video.muted = true; video.defaultMuted = true; video.playsInline = true; video.loop = true;
+    video.setAttribute('muted', ''); video.setAttribute('playsinline', '');
+    prepFade(video);
+    if (opts.fade) video.addEventListener('playing', () => fadeIn(video), { once: true });
+    video.addEventListener('error', () => { if (opts.fade) video.style.opacity = '0'; }, { once: true });
+    const play = () => video.play().catch(() => {});
+    if (info.type === 'hls' && !video.canPlayType('application/vnd.apple.mpegurl')) {
+      LL.loadHls().then((Hls) => {
+        if (!Hls || !Hls.isSupported()) return;
+        const hls = new Hls({ capLevelToPlayerSize: true });
+        hls.loadSource(info.src);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, play);
+      }).catch(() => {});
+    } else {
+      if (video.getAttribute('src') !== info.src) { video.src = info.src; video.load(); }
+      play(); video.addEventListener('canplay', play, { once: true });
+    }
+    return video;
   };
 })();
 
@@ -574,17 +707,9 @@
     document.querySelectorAll('[data-hero-video]').forEach((video) => {
       const scope = video.parentElement;
       const holder = scope.querySelector('[data-bg-video-url]') || scope.querySelector('[data-video-url]') || (video.closest('section') && video.closest('section').querySelector('[data-video-url]'));
-      const url = holder ? holder.textContent.trim() : '';
-      if (!url) { video.remove(); return; }
-      video.muted = true; video.defaultMuted = true; video.playsInline = true; video.loop = true;
-      video.setAttribute('muted', ''); video.setAttribute('playsinline', '');
-      if (holder && holder.hasAttribute('data-bg-video-url')) {
-        video.style.opacity = '0'; video.style.transition = 'opacity 1s ease';
-        video.addEventListener('playing', () => { video.style.opacity = '1'; }, { once: true });
-      }
-      video.src = url; video.load();
-      const play = () => video.play().catch(() => {});
-      play(); video.addEventListener('canplay', play, { once: true });
+      const url = holder ? (holder.getAttribute('data-bg-video-url') || holder.textContent).trim() : '';
+      /* Any link works (file, HLS, Vimeo, YouTube, Bunny). Always fade in, so the image stays until the video plays. */
+      if (!LL.mountSilentVideo(video, url, { fade: true })) video.remove();
     });
     document.querySelectorAll('[data-hero-preview]').forEach((preview) => {
       const group = preview.closest('[data-video-modal-group]');
@@ -592,7 +717,7 @@
       const url = holder ? holder.textContent.trim() : '';
       if (!url) { preview.style.display = 'none'; return; }
       const video = preview.querySelector('[data-hero-preview-video]');
-      if (video && !LL.getEmbedUrl(url)) { video.muted = true; video.playsInline = true; video.loop = true; video.src = url; video.play().catch(() => {}); }
+      if (video) LL.mountSilentVideo(video, url, { fade: true });
     });
   });
 
@@ -635,7 +760,16 @@
         const url = getUrl();
         const embedUrl = url ? LL.getEmbedUrl(url) : null;
         if (embedUrl && embed) { modal.setAttribute('data-video-embed', 'true'); embed.innerHTML = '<iframe src="' + embedUrl + '" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Film"></iframe>'; }
-        else { modal.setAttribute('data-video-embed', 'false'); if (url && video.getAttribute('src') !== url) video.src = url; if (url) video.play().catch(() => {}); }
+        else {
+          modal.setAttribute('data-video-embed', 'false');
+          const info = LL.parseVideo(url);
+          if (info && info.type === 'hls' && !video.canPlayType('application/vnd.apple.mpegurl')) {
+            if (video.dataset.hlsSrc !== url) {
+              video.dataset.hlsSrc = url;
+              LL.loadHls().then((Hls) => { if (!Hls || !Hls.isSupported()) return; const hls = new Hls(); hls.loadSource(url); hls.attachMedia(video); hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {})); }).catch(() => {});
+            } else video.play().catch(() => {});
+          } else { if (url && video.getAttribute('src') !== url) video.src = url; if (url) video.play().catch(() => {}); }
+        }
         const from = sourceRect();
         if (tl) tl.kill();
         gsap.set(player, { clearProps: 'transform' });
