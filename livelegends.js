@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.2.2 | built 2026-11-17 | source: src/ */
+/*! Live Legends site scripts v1.3.0 | built 2026-11-23 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -1068,10 +1068,22 @@
       const labelWrap = dock.querySelector('[data-section-dock-label-wrap]');
       const list = dock.querySelector('[data-section-dock-list]');
       const indicator = dock.querySelector('[data-section-dock-indicator]');
-      const links = list ? Array.from(list.querySelectorAll('[data-section-dock-link]')) : [];
-      const sections = links.map((link) => { const href = link.getAttribute('href'); return href && href.charAt(0) === '#' ? document.querySelector(href) : null; });
+      // A link whose section no longer exists (e.g. a removed block) is hidden and skipped, so it cannot switch the whole dock off
+      const findSection = (link) => {
+        const href = link.getAttribute('href');
+        if (!href || href.charAt(0) !== '#' || href.length < 2) return null;
+        try { return document.querySelector(href); } catch (e) { return null; }
+      };
+      const links = [];
+      const sections = [];
+      (list ? Array.from(list.querySelectorAll('[data-section-dock-link]')) : []).forEach((link) => {
+        const section = findSection(link);
+        if (section) { links.push(link); sections.push(section); return; }
+        console.warn('[Live Legends] section dock: no section for ' + link.getAttribute('href') + ', link hidden');
+        (link.closest('li') || link).style.display = 'none';
+      });
       const labelTemplate = labelWrap ? labelWrap.firstElementChild : null;
-      if (!pill || !toggle || !labelWrap || !labelTemplate || !list || !indicator || links.length < 2 || sections.some((s) => !s)) return;
+      if (!pill || !toggle || !labelWrap || !labelTemplate || !list || !indicator || links.length < 2) return;
 
       let activeIndex = Math.max(0, links.findIndex((l) => l.hasAttribute('data-active')));
       let open = false;
@@ -1468,75 +1480,9 @@
 })();
 
 /* ---- src/pages/people.js ---- */
-/* People: hover pixels on the team photos – site-size cubes (--ll-cube: 3em, 1.5em on mobile) along the photo edge, in the background colour */
+/* People page (the hover pixels on the team photos were removed on 23 Nov 2026) and About values */
 (function () {
   const LL = window.LiveLegends;
-
-  const cubeSize = (el) => {
-    const probe = document.createElement('div');
-    probe.className = 'u-cube';
-    probe.style.cssText = 'position:absolute;visibility:hidden;width:var(--ll-cube,3em);height:var(--ll-cube,3em)';
-    el.appendChild(probe);
-    const s = probe.getBoundingClientRect().width;
-    probe.remove();
-    return s || 48;
-  };
-
-  LL.register('peoplePixels', () => {
-    const SHARE = 0.4;   // share of the edge cubes that appear on hover
-    const STEP = 0.3;    // seconds for all of them to appear
-    const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches;
-    document.querySelectorAll('[data-pixelated-image-reveal]').forEach((card) => {
-      const grid = card.querySelector('[data-pixelated-image-reveal-grid]');
-      if (!grid) return;
-      let edge = [];
-      let on = false;
-      const build = () => {
-        grid.querySelectorAll('.pixelated-image-card__pixel').forEach((p) => p.remove());
-        edge = [];
-        const r = grid.getBoundingClientRect();
-        const s = cubeSize(grid);
-        if (!r.width) return;
-        const cols = Math.max(1, Math.round(r.width / s));
-        const rows = Math.max(1, Math.round(r.height / s));
-        for (let y = 0; y < rows; y++) {
-          for (let x = 0; x < cols; x++) {
-            if (!(y === 0 || x === 0 || y === rows - 1 || x === cols - 1)) continue;
-            const p = document.createElement('div');
-            p.className = 'pixelated-image-card__pixel';
-            p.style.width = s + 'px';
-            p.style.height = s + 'px';
-            p.style.left = (x === cols - 1 ? r.width - s : x * s) + 'px';
-            p.style.top = (y === rows - 1 ? r.height - s : y * s) + 'px';
-            grid.appendChild(p);
-            edge.push(p);
-          }
-        }
-      };
-      build();
-      window.addEventListener('resize', () => { if (!on) build(); });
-      const pick = () => {
-        const a = edge.slice();
-        for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-        return a.slice(0, Math.round(edge.length * SHARE));
-      };
-      const set = (state) => {
-        on = state;
-        const list = state ? pick() : edge;
-        if (LL.reduceMotion) {
-          edge.forEach((p) => { p.style.display = 'none'; });
-          if (state) list.forEach((p) => { p.style.display = 'block'; });
-          return;
-        }
-        gsap.killTweensOf(edge);
-        if (!state) { gsap.to(edge, { display: 'none', duration: 0, stagger: { each: STEP / edge.length, from: 'random' } }); return; }
-        gsap.set(edge, { display: 'none' });
-        gsap.to(list, { display: 'block', duration: 0, stagger: { each: STEP / list.length, from: 'random' } });
-      };
-      if (touch) card.addEventListener('click', () => set(!on));
-      else { card.addEventListener('mouseenter', () => set(true)); card.addEventListener('mouseleave', () => set(false)); }
-    });
-  }, 'page');
 
   /* About values (component kept for reuse): auto-advancing tabs with a progress bar */
   LL.register('values', () => {
@@ -1795,6 +1741,114 @@
     initInfiniteCardsGrid();
     initLabModal();
   }, 'page');
+})();
+
+/* ---- src/global/cookie-consent.js ---- */
+/* Cookie banner + Google Analytics 4 (Consent Mode v2, basic mode)
+   - The banner lives in the Footer component: [data-cookie-banner] with the GA4 ID in data-ga4-id
+     (Footer setting "GA4 Measurement ID"). No ID = no banner and no tracking.
+   - GA4 (gtag.js) is only loaded after "Accept". Before that nothing is sent to Google and no cookie is set.
+   - The choice is kept for 12 months in localStorage (ll-consent), then the banner asks again.
+   - Any [data-cookie-settings] element (footer: "Cookie settings") reopens the banner.
+   - Declining after an earlier yes switches GA off and removes the _ga cookies. */
+(function () {
+  const LL = window.LiveLegends;
+  const KEY = 'll-consent';
+  const MAX_AGE = 365 * 24 * 60 * 60 * 1000;
+
+  const readChoice = () => {
+    try {
+      const v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      return v && (v.c === 'granted' || v.c === 'denied') && Date.now() - v.t < MAX_AGE ? v.c : null;
+    } catch (e) { return null; }
+  };
+  const saveChoice = (c) => { try { localStorage.setItem(KEY, JSON.stringify({ c, t: Date.now() })); } catch (e) {} };
+
+  const gtagReady = () => {
+    window.dataLayer = window.dataLayer || [];
+    if (!window.gtag) window.gtag = function () { window.dataLayer.push(arguments); };
+  };
+
+  let gaLoaded = false;
+  const startGa = (id) => {
+    window['ga-disable-' + id] = false;
+    window.gtag('consent', 'update', { analytics_storage: 'granted' });
+    if (gaLoaded) return;
+    gaLoaded = true;
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(id);
+    document.head.appendChild(s);
+    window.gtag('js', new Date());
+    window.gtag('config', id);
+  };
+
+  const stopGa = (id) => {
+    window['ga-disable-' + id] = true;
+    window.gtag('consent', 'update', { analytics_storage: 'denied' });
+    const parts = location.hostname.split('.');
+    document.cookie.split(';').forEach((c) => {
+      const name = c.split('=')[0].trim();
+      if (!/^_ga/.test(name)) return;
+      document.cookie = name + '=; Max-Age=0; path=/';
+      for (let i = 0; i < parts.length - 1; i++) document.cookie = name + '=; Max-Age=0; path=/; domain=.' + parts.slice(i).join('.');
+    });
+  };
+
+  LL.register('cookieConsent', () => {
+    const banner = document.querySelector('[data-cookie-banner]');
+    const id = banner ? (banner.getAttribute('data-ga4-id') || '').trim().toUpperCase() : '';
+    const settingsLinks = Array.from(document.querySelectorAll('[data-cookie-settings]'));
+
+    // No banner or no valid GA4 ID: nothing to ask consent for, so no banner and no "Cookie settings" link
+    if (!banner || !/^G-[A-Z0-9]+$/.test(id)) {
+      if (banner) banner.remove();
+      settingsLinks.forEach((link) => {
+        const sep = link.previousElementSibling;
+        if (sep && sep.classList.contains('footer_legal-separator')) sep.style.display = 'none';
+        link.style.display = 'none';
+      });
+      return;
+    }
+
+    // Out of the footer (which may be transformed or clipped), so position:fixed always works
+    document.body.appendChild(banner);
+
+    gtagReady();
+    window.gtag('consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
+
+    const open = () => {
+      banner.setAttribute('data-cookie-status', 'open');
+      banner.removeAttribute('aria-hidden');
+    };
+    const close = () => {
+      banner.setAttribute('data-cookie-status', 'closed');
+      banner.setAttribute('aria-hidden', 'true');
+    };
+    const choose = (c) => {
+      saveChoice(c);
+      if (c === 'granted') startGa(id); else stopGa(id);
+      close();
+    };
+
+    const bind = (el, fn) => {
+      if (!el) return;
+      el.addEventListener('click', (e) => { e.preventDefault(); fn(); });
+      LL.onKeyActivate(el, fn);
+    };
+    bind(banner.querySelector('[data-cookie-accept]'), () => choose('granted'));
+    bind(banner.querySelector('[data-cookie-decline]'), () => choose('denied'));
+    settingsLinks.forEach((link) => bind(link, open));
+
+    const choice = readChoice();
+    if (choice === 'granted') { startGa(id); close(); }
+    else if (choice === 'denied') close();
+    else {
+      close();
+      // Let the page (and the homepage loader) settle before the banner slides in
+      LL.afterLoader(() => setTimeout(open, 600));
+    }
+  }, 'early');
 })();
 
 /* ---- src/main.js ---- */
