@@ -1504,7 +1504,8 @@
 
   /* Team masonry: every photo keeps its own shape (square or tall) and its box is reserved
      before the image loads, so the columns don't jump. The shape comes from the CMS field
-     "Photo shape" (data-photo-shape on .team-card_photo-wrapper). Until that attribute is bound
+     "Photo shape" (data-photo-shape on .team-card_photo-wrapper); tall is the class default
+     (aspect-ratio 2304/2520), square is set here. Until that attribute is bound
      in the Designer, the list below (asset ids of the square photos) fills it in. Photos without
      a shape take the tall default and settle on their real ratio once loaded. */
   LL.register('teamShapes', () => {
@@ -1521,6 +1522,7 @@
         const id = ((img.getAttribute('src') || '').match(/\/([a-f0-9]{24})_/) || [])[1];
         if (id) wrap.setAttribute('data-photo-shape', SQUARE.includes(id) ? 'square' : 'tall');
       }
+      if ((wrap.getAttribute('data-photo-shape') || '').toLowerCase() === 'square') wrap.style.aspectRatio = '1 / 1';
       const fit = () => {
         if (!img.naturalWidth || !img.naturalHeight) return;
         const r = img.naturalWidth / img.naturalHeight;
