@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.3.2 | built 2026-11-24 | source: src/ */
+/*! Live Legends site scripts v1.3.3 | built 2026-11-24 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -1501,6 +1501,35 @@
 /* People page (the hover pixels on the team photos were removed on 23 Nov 2026) and About values */
 (function () {
   const LL = window.LiveLegends;
+
+  /* Team masonry: every photo keeps its own shape (square or tall) and its box is reserved
+     before the image loads, so the columns don't jump. The shape comes from the CMS field
+     "Photo shape" (data-photo-shape on .team-card_photo-wrapper). Until that attribute is bound
+     in the Designer, the list below (asset ids of the square photos) fills it in. Photos without
+     a shape take the tall default and settle on their real ratio once loaded. */
+  LL.register('teamShapes', () => {
+    const SQUARE = ['6b005527afe00afc39fe5e76', '6af1cfc05590ee3f3695dff0', '6af1ceb5be24b4b98a654dd3', '6af1cdc6be24b4b98a64ce10',
+      '6af1cd865c1450be0d8de994', '6af1cbc96273f72075892c67', '6af1caddef90800ed184f22f', '6af1c9af360ad185cc8c3a7b',
+      '6af1c8ff8fe8997676461f87', '6af1c3390208a42234cb6a81', '6af1c2e1ae917bb48537d7fd', '6af1c2ab6273f7207584068e',
+      '6af1be479561aedbf4905689', '6af1bf7d8021d9b6e882477b', '6af1bfd0a33298fe953f10b2', '6af1bffce3fea74ad8f4cfdd'];
+    document.querySelectorAll('[data-team-list] .team-card_photo-wrapper').forEach((wrap) => {
+      const img = wrap.querySelector('img');
+      if (!img) return;
+      /* The CMS image gets sizes="100vw"; the cards are a column wide, so ask for a smaller file */
+      img.setAttribute('sizes', '(min-width: 992px) 30vw, (min-width: 768px) 46vw, 92vw');
+      if (!wrap.getAttribute('data-photo-shape')) {
+        const id = ((img.getAttribute('src') || '').match(/\/([a-f0-9]{24})_/) || [])[1];
+        if (id) wrap.setAttribute('data-photo-shape', SQUARE.includes(id) ? 'square' : 'tall');
+      }
+      const fit = () => {
+        if (!img.naturalWidth || !img.naturalHeight) return;
+        const r = img.naturalWidth / img.naturalHeight;
+        const box = wrap.getBoundingClientRect();
+        if (box.height && Math.abs(box.width / box.height - r) > 0.01) wrap.style.aspectRatio = img.naturalWidth + ' / ' + img.naturalHeight;
+      };
+      if (img.complete) fit(); else img.addEventListener('load', fit, { once: true });
+    });
+  }, 'early');
 
   /* About values (component kept for reuse): auto-advancing tabs with a progress bar */
   LL.register('values', () => {
