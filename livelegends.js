@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.3.0 | built 2026-11-23 | source: src/ */
+/*! Live Legends site scripts v1.3.1 | built 2026-11-24 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -90,7 +90,7 @@
       if (m) {
         const h = m[2] || u.searchParams.get('h');
         const base = 'https://player.vimeo.com/video/' + m[1] + '?' + (h ? 'h=' + h + '&' : '');
-        return { type: 'iframe', provider: 'vimeo', id: m[1], src: base, embed: (bg) => base + (bg
+        return { type: 'iframe', provider: 'vimeo', id: m[1], hash: h || '', src: base, embed: (bg) => base + (bg
           ? qs({ background: 1, autoplay: 1, loop: 1, muted: 1, autopause: 0, dnt: 1 })
           : qs({ autoplay: 1, title: 0, byline: 0, portrait: 0, dnt: 1 })) };
       }
@@ -165,6 +165,8 @@
       if (getComputedStyle(video).position === 'static') box.style.position = 'relative';
       box.style.setProperty('--video-ratio', info.ratio || 16 / 9);
       const frame = document.createElement('iframe');
+      /* data-video-lazy: only load once the block comes near the viewport (e.g. the homepage showreel, so the hero loads first) */
+      if (video.hasAttribute('data-video-lazy')) frame.loading = 'lazy';
       frame.src = info.embed(true);
       frame.title = 'Background video';
       frame.tabIndex = -1;
@@ -179,7 +181,8 @@
       box.videoReady = ready;
       /* Real aspect ratio of Vimeo videos (portrait, 4:5, 21:9 …) so the crop is right */
       if (info.provider === 'vimeo') {
-        fetch('https://vimeo.com/api/oembed.json?url=' + encodeURIComponent('https://vimeo.com/' + info.id))
+        /* Unlisted videos only answer with their private key in the address (without it Vimeo returns 404 and the ratio stays 16:9) */
+        fetch('https://vimeo.com/api/oembed.json?url=' + encodeURIComponent('https://vimeo.com/' + info.id + (info.hash ? '/' + info.hash : '')))
           .then((r) => (r.ok ? r.json() : null))
           .then((d) => { if (d && d.width && d.height) box.style.setProperty('--video-ratio', d.width / d.height); })
           .catch(() => {});
@@ -300,17 +303,31 @@
       const bg = getComputedStyle(el).backgroundImage;
       return !!bg && bg.indexOf('url(') !== -1;
     };
+    /* Background videos ([data-hero-video]) ignore the pointer, so elementsFromPoint skips them: check their box directly */
+    const videoAt = (node, x, y) => {
+      if (!node.querySelectorAll) return false;
+      const vids = node.querySelectorAll('[data-hero-video]');
+      for (let i = 0; i < vids.length; i++) {
+        const v = vids[i];
+        if (v.closest(SKIP) || getComputedStyle(v).display === 'none' || getComputedStyle(v).visibility === 'hidden') continue;
+        const b = v.getBoundingClientRect();
+        if (b.width && b.height && x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) return true;
+      }
+      return false;
+    };
     const colourBehind = (part, nav) => {
       const r = part.getBoundingClientRect();
       if (!r.width || !r.height) return null;
-      const stack = document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      const stack = document.elementsFromPoint(x, y);
       for (let i = 0; i < stack.length; i++) {
         const el = stack[i];
         if (nav.contains(el) || el.closest(SKIP)) continue;
         const forced = el.closest('[data-nav-color]');
         if (forced) return forced.getAttribute('data-nav-color') === 'dark' ? DARK : WHITE;
         for (let node = el; node && node !== document.documentElement; node = node.parentElement) {
-          if (isMedia(node)) return WHITE;
+          if (isMedia(node) || videoAt(node, x, y)) return WHITE;
           const parts = getComputedStyle(node).backgroundColor.match(/[\d.]+/g);
           if (parts && (parts.length < 4 || parseFloat(parts[3]) > 0.5)) {
             const l = (0.2126 * parts[0] + 0.7152 * parts[1] + 0.0722 * parts[2]) / 255;
@@ -336,6 +353,7 @@
       window.addEventListener('resize', schedule);
       window.addEventListener('load', update);
       window.addEventListener('loader:done', update);
+      setTimeout(update, 1500); /* again once the background videos have been mounted */
       new MutationObserver(update).observe(nav, { attributes: true, attributeFilter: ['data-menu-status'] });
       update();
     });
