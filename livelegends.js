@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.3.1 | built 2026-11-24 | source: src/ */
+/*! Live Legends site scripts v1.3.2 | built 2026-11-24 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -1762,10 +1762,11 @@
 })();
 
 /* ---- src/global/cookie-consent.js ---- */
-/* Cookie banner + Google Analytics 4 (Consent Mode v2, basic mode)
-   - The banner lives in the Footer component: [data-cookie-banner] with the GA4 ID in data-ga4-id
-     (Footer setting "GA4 Measurement ID"). No ID = no banner and no tracking.
-   - GA4 (gtag.js) is only loaded after "Accept". Before that nothing is sent to Google and no cookie is set.
+/* Cookie banner + Google Analytics 4 / Google Tag Manager (Consent Mode v2, basic mode)
+   - The banner lives in the Footer component: [data-cookie-banner] with the ID in data-ga4-id
+     (Footer setting "GA4 Measurement ID"): a GA4 ID (G-…) loads gtag.js, a Tag Manager ID (GTM-…) loads gtm.js.
+     No valid ID = no banner and no tracking.
+   - Google is only loaded after "Accept". Before that nothing is sent to Google and no cookie is set.
    - The choice is kept for 12 months in localStorage (ll-consent), then the banner asks again.
    - Any [data-cookie-settings] element (footer: "Cookie settings") reopens the banner.
    - Declining after an earlier yes switches GA off and removes the _ga cookies. */
@@ -1789,20 +1790,27 @@
 
   let gaLoaded = false;
   const startGa = (id) => {
-    window['ga-disable-' + id] = false;
+    const gtm = id.indexOf('GTM-') === 0;
+    if (!gtm) window['ga-disable-' + id] = false;
     window.gtag('consent', 'update', { analytics_storage: 'granted' });
     if (gaLoaded) return;
     gaLoaded = true;
     const s = document.createElement('script');
     s.async = true;
-    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(id);
+    if (gtm) {
+      // Tag Manager: its GA4 tags read the consent state set above
+      window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+      s.src = 'https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(id);
+    } else {
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(id);
+      window.gtag('js', new Date());
+      window.gtag('config', id);
+    }
     document.head.appendChild(s);
-    window.gtag('js', new Date());
-    window.gtag('config', id);
   };
 
   const stopGa = (id) => {
-    window['ga-disable-' + id] = true;
+    if (id.indexOf('GTM-') !== 0) window['ga-disable-' + id] = true;
     window.gtag('consent', 'update', { analytics_storage: 'denied' });
     const parts = location.hostname.split('.');
     document.cookie.split(';').forEach((c) => {
@@ -1818,8 +1826,8 @@
     const id = banner ? (banner.getAttribute('data-ga4-id') || '').trim().toUpperCase() : '';
     const settingsLinks = Array.from(document.querySelectorAll('[data-cookie-settings]'));
 
-    // No banner or no valid GA4 ID: nothing to ask consent for, so no banner and no "Cookie settings" link
-    if (!banner || !/^G-[A-Z0-9]+$/.test(id)) {
+    // No banner or no valid GA4 / GTM ID: nothing to ask consent for, so no banner and no "Cookie settings" link
+    if (!banner || !/^(G|GTM)-[A-Z0-9]+$/.test(id)) {
       if (banner) banner.remove();
       settingsLinks.forEach((link) => {
         const sep = link.previousElementSibling;
