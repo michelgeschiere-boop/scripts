@@ -1523,6 +1523,8 @@
         if (id) wrap.setAttribute('data-photo-shape', SQUARE.includes(id) ? 'square' : 'tall');
       }
       if ((wrap.getAttribute('data-photo-shape') || '').toLowerCase() === 'square') wrap.style.aspectRatio = '1 / 1';
+      /* Salomé's photo is a little shorter than the other tall ones */
+      if ((img.getAttribute('src') || '').includes('6af1c02f35b35a46d6e88288')) wrap.style.aspectRatio = '2304 / 2411';
       const fit = () => {
         if (!img.naturalWidth || !img.naturalHeight) return;
         const r = img.naturalWidth / img.naturalHeight;
