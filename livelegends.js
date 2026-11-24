@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.3.5 | built 2026-11-24 | source: src/ */
+/*! Live Legends site scripts v1.3.6 | built 2026-11-24 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -886,6 +886,8 @@
         if (LL.reduceMotion) { gsap.set(el, { visibility: 'visible' }); return; }
         SplitText.create(el, {
           type: 'lines', mask: 'lines', linesClass: 'split-line', autoSplit: true,
+          /* aria-label is only allowed on headings; other blocks keep their text readable as it is */
+          aria: /^H[1-6]$/.test(el.tagName) ? 'auto' : 'none',
           onSplit(self) {
             gsap.set(el, { visibility: 'visible' });
             const long = self.lines.length > 3;
