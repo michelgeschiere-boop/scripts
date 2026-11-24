@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.3.3 | built 2026-11-24 | source: src/ */
+/*! Live Legends site scripts v1.3.4 | built 2026-11-24 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -1502,26 +1502,16 @@
 (function () {
   const LL = window.LiveLegends;
 
-  /* Team masonry: every photo keeps its own shape (square or tall) and its box is reserved
-     before the image loads, so the columns don't jump. The shape comes from the CMS field
-     "Photo shape" (data-photo-shape on .team-card_photo-wrapper); tall is the class default
-     (aspect-ratio 2304/2520), square is set here. Until that attribute is bound
-     in the Designer, the list below (asset ids of the square photos) fills it in. Photos without
-     a shape take the tall default and settle on their real ratio once loaded. */
+  /* Team masonry: every photo keeps its own shape and its box is reserved before the image
+     loads, so the columns don't jump. The shape comes from the CMS field "Photo shape"
+     (data-photo-shape on .team-card_photo-wrapper): tall is the class default (2304/2520),
+     square is set here. A member without a shape settles on the real ratio once the photo loads. */
   LL.register('teamShapes', () => {
-    const SQUARE = ['6b005527afe00afc39fe5e76', '6af1cfc05590ee3f3695dff0', '6af1ceb5be24b4b98a654dd3', '6af1cdc6be24b4b98a64ce10',
-      '6af1cd865c1450be0d8de994', '6af1cbc96273f72075892c67', '6af1caddef90800ed184f22f', '6af1c9af360ad185cc8c3a7b',
-      '6af1c8ff8fe8997676461f87', '6af1c3390208a42234cb6a81', '6af1c2e1ae917bb48537d7fd', '6af1c2ab6273f7207584068e',
-      '6af1be479561aedbf4905689', '6af1bf7d8021d9b6e882477b', '6af1bfd0a33298fe953f10b2', '6af1bffce3fea74ad8f4cfdd'];
     document.querySelectorAll('[data-team-list] .team-card_photo-wrapper').forEach((wrap) => {
       const img = wrap.querySelector('img');
       if (!img) return;
       /* The CMS image gets sizes="100vw"; the cards are a column wide, so ask for a smaller file */
       img.setAttribute('sizes', '(min-width: 992px) 30vw, (min-width: 768px) 46vw, 92vw');
-      if (!wrap.getAttribute('data-photo-shape')) {
-        const id = ((img.getAttribute('src') || '').match(/\/([a-f0-9]{24})_/) || [])[1];
-        if (id) wrap.setAttribute('data-photo-shape', SQUARE.includes(id) ? 'square' : 'tall');
-      }
       if ((wrap.getAttribute('data-photo-shape') || '').toLowerCase() === 'square') wrap.style.aspectRatio = '1 / 1';
       /* Salomé's photo is a little shorter than the other tall ones */
       if ((img.getAttribute('src') || '').includes('6af1c02f35b35a46d6e88288')) wrap.style.aspectRatio = '2304 / 2411';
