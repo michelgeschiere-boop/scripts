@@ -1,4 +1,4 @@
-/*! Live Legends site scripts v1.3.4 | built 2026-11-24 | source: src/ */
+/*! Live Legends site scripts v1.3.5 | built 2026-11-24 | source: src/ */
 
 /* ---- src/core/core.js ---- */
 /* =====================================================================
@@ -850,8 +850,13 @@
           .to(player, { x: x + (to.left - cur.left), y: y + (to.top - cur.top), scaleX: sx * (to.width / cur.width), scaleY: sy * (to.height / cur.height), duration: 0.8, ease: LL.EASE_IO }, 0)
           .to(modal, { autoAlpha: 0, duration: 0.3, ease: 'power1.in' }, 0.5);
       };
-      trigger.addEventListener('click', open);
-      LL.onKeyActivate(trigger, open);
+      /* Links inside the trigger (e.g. "Get in touch" in the showreel bar) keep their own job and don't open the film */
+      const fromLink = (e) => { const a = e.target.closest('a, button'); return a && a !== trigger && trigger.contains(a); };
+      trigger.addEventListener('click', (e) => { if (!fromLink(e)) open(); });
+      trigger.addEventListener('keydown', (e) => {
+        if (fromLink(e) || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault(); open();
+      });
       modal.querySelectorAll('[data-video-modal-close]').forEach((el) => el.addEventListener('click', close));
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen) close(); });
       if (toggle) toggle.addEventListener('click', () => (video.paused ? video.play() : video.pause()));
